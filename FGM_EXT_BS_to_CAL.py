@@ -41,15 +41,18 @@ index = 400
 
 # importing packages
 
-import sys
-
 # add your library folder to path
 
-sys.path.append('C:/Users/Livia/Documents/FGMEXT/Lib')
+lib_path = 'C:/Users/Livia/Documents/FGMEXT/Lib/'
 
 calparams_filepath = 'C:/FGM_Extended_Mode/calibration'
 
 BS_filepath = 'C:/FGM_Extended_Mode/BS_raw_files/'
+
+
+# save location for output data
+filebase_cal = 'C:/FGM_Extended_Mode/' + craft + '_EXT_Calibrated'
+
 
 import numpy as np
 
@@ -292,26 +295,25 @@ fgmhkphid=(0x2D,0x55,0x7D,0xA5)
 
 
 
-starts_stops_spins_df = pd.read_csv('C:/FGM_Extended_Mode/Lib/' + craft + '_SATT_start_stop_spins',names = ['Starts', 'Stops', 'Spins'])
+starts_stops_spins_df = pd.read_csv(lib_path + craft + '_SATT_start_stop_spins',names = ['Starts', 'Stops', 'Spins'])
 
-ext_entries_df = pd.read_csv(craft + '_Ext_Entries', header = None)
+ext_entries_df = pd.read_csv(lib_path + craft + '_Ext_Entries', header = None)
 
 ext_entries = pd.to_datetime(ext_entries_df[0])
 
 del ext_entries_df
 
-ext_exits_df = pd.read_csv(craft + '_Ext_Exits', header = None)
+ext_exits_df = pd.read_csv(lib_path + craft + '_Ext_Exits', header = None)
 
 ext_exits = pd.to_datetime(ext_exits_df[0])
 
 del ext_exits_df
 
-MSA_dumps_df = pd.read_csv(craft + '_MSA_Dump_times', header = None)
+MSA_dumps_df = pd.read_csv(lib_path + craft + '_MSA_Dump_times', header = None)
 
 MSA_dumps = pd.to_datetime(MSA_dumps_df[0])
 
 del MSA_dumps_df
-
 
 ext_entry = ext_entries[index]
 
@@ -566,7 +568,6 @@ plt.show()
 
 # Use SCETS to look at multiple dataset case
 
-#%%
 
 reset_counter = 1
 
@@ -640,42 +641,22 @@ for i in af_indices:
             
         bef_indices.append(i)
             
-
+# decoded and clean dataframe in sequential data 
 
 sequential_data.drop(labels = bef_indices, axis = 0, inplace = True)
 
-sequential_data['reset'] = sequential_data['reset'].astype(float)
-
-sequential_data['resolution'] = sequential_data['resolution'].astype(int)
-
-sequential_data['x'] = sequential_data['x'].astype(float)
-
-sequential_data['y'] = sequential_data['y'].astype(float)
-
-sequential_data['z'] = sequential_data['z'].astype(float)
-
 sequential_data.reset_index(drop = True, inplace = True)
-
-
-plt.plot(sequential_data['reset'])
-plt.title('Reset Vector for decoded EXT data')
-plt.show()
-
-decode_filepath = 'C:/FGM_Extended_Mode/BS_ext_decoded_files' +'/' + craft + '_' + dumpdate + '_clean_decode' + '.csv'
-
-sequential_data.to_csv(decode_filepath)
-
 
 
 # timestamping and scaling decoded file
 
 
 # change to array
-
-r = np.array(sequential_data['resolution'])
-x = np.array(sequential_data['x'])
-y = np.array(sequential_data['y'])
-z = np.array(sequential_data['z'])
+resets = sequential_data['reset'].astype(float)
+r = np.array(sequential_data['resolution'].astype(int))
+x = np.array(sequential_data['x'].astype(float))
+y = np.array(sequential_data['y'].astype(float))
+z = np.array(sequential_data['z'].astype(float))
 
 # make an estimated time axis
 
@@ -683,10 +664,7 @@ t = make_t(ext_entry, t_spin, ext_exit, x)
 
 name = craft + '_' + datadate
 
-quickplot(name + 'Raw Timestamped','time [UTC]','count [#]')
-
-filebase_cal = 'C:/FGM_Extended_Mode/' + craft + '_EXT_Calibrated'
-
+quickplot(name + ' Raw Timestamped','time [UTC]','count [#]')
 
 # nominal scaling
 # nominal change from engineering units to nanotesla
@@ -741,17 +719,11 @@ outlier_indices = np.hstack((x_outlier_indices, y_outlier_indices, z_outlier_ind
 
 ordered_outliers = np.sort(outlier_indices)
 
-x_cleaned = np.delete(x, ordered_outliers)
-y_cleaned = np.delete(y, ordered_outliers)
-z_cleaned = np.delete(z, ordered_outliers)
-t_cleaned = np.delete(t, ordered_outliers)
-r_cleaned = np.delete(r, ordered_outliers)
-
-x = x_cleaned
-y = y_cleaned
-z = z_cleaned
-t = t_cleaned
-r = r_cleaned
+x = np.delete(x, ordered_outliers)
+y = np.delete(y, ordered_outliers)
+z = np.delete(z, ordered_outliers)
+t = np.delete(t, ordered_outliers)
+r = np.delete(r, ordered_outliers)
 
 quickplot(name +'_cleaned','time [UTC]','[nT]')
 
@@ -762,7 +734,7 @@ start_time_iso = t[0].strftime('%Y-%m-%dT%H:%M:%SZ')
 
 print('Timebase Start:')
 
-print(start_time)
+print(start_time_iso)
 
 print('Timebase Stop:')
         
@@ -772,7 +744,7 @@ end_time = t[-1].strftime('%Y%m%d_%H%M%S')
 
 end_time_iso = t[-1].strftime('%Y-%m-%dT%H:%M:%SZ')  
 
-print(end_time)
+print(end_time_iso)
 
 timebase_duration = t[-1] - t[0]
 
@@ -793,10 +765,9 @@ metadata_savename =  filebase_cal + '/' + craft + '_' + start_time + '_' + end_t
 
 f = open(metadata_savename, "w")
 f.write('export PATH=$PATH:/cluster/operations/software/dp/bin/:/cluster/operations/software/caa \n')
-#f.write('export FGMPATH=$PATH:/cluster/operations/calibration/tubs_mirror/' + str(datadate[:4]) + '/' + str(datadate[4:6]) + ' \n')
-# pointing FGMPATH at my own calibration folder containing all calibration files; not sure if this is okay to do 
-# should check wtih Chris/Tim on this
-f.write('export FGMPATH=/home/lme19/calibration \n')
+f.write('export FGMPATH=$PATH:/cluster/operations/calibration/tubs_mirror/' + str(datadate[:4]) + '/' + str(datadate[4:6]) + ' \n')
+
+#f.write('export FGMPATH=/home/lme19/calibration \n')
 f.write('export SATTPATH=. \n')
 f.write('export ORBITPATH=. \n')
 f.write('putsatt /cluster/data/raw/' + str(datadate[:4]) + '/' + str(datadate[4:6]) + '/' +str(craft) + '_' + str(datadate[2:]) + '_B.SATT \n')
