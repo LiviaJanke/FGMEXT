@@ -45,7 +45,9 @@ import sys
 
 # add your library folder to path
 
-sys.path.append('C:/FGM_Extended_Mode/Lib')
+sys.path.append('C:/Users/Livia/Documents/FGMEXT/Lib')
+
+calparams_filepath = 'C:/FGM_Extended_Mode/calibration'
 
 import numpy as np
 
@@ -286,17 +288,17 @@ validphid=(0x1F,0x47,0x6F,0x97,0x26,0x4E,0x76,0x9E,0x2D,0x55,0x7D,0xA5)
 sciphid=(0x1F,0x47,0x6F,0x97,0x26,0x4E,0x76,0x9E)
 fgmhkphid=(0x2D,0x55,0x7D,0xA5)
 
-
+#%%
 
 starts_stops_spins_df = pd.read_csv('C:/FGM_Extended_Mode/Lib/' + craft + '_SATT_start_stop_spins',names = ['Starts', 'Stops', 'Spins'])
 
-ext_entries_df = pd.read_csv('C:/FGM_Extended_Mode/Lib/' + craft + '_Ext_Entries', header = None)
+ext_entries_df = pd.read_csv(craft + '_Ext_Entries', header = None)
 
 ext_entries = pd.to_datetime(ext_entries_df[0])
 
 del ext_entries_df
 
-ext_exits_df = pd.read_csv('C:/FGM_Extended_Mode/Lib/' + craft + '_Ext_Exits', header = None)
+ext_exits_df = pd.read_csv(craft + '_Ext_Exits', header = None)
 
 ext_exits = pd.to_datetime(ext_exits_df[0])
 
@@ -396,7 +398,7 @@ year = ext_entry.strftime('%y')
 
 month = ext_entry.strftime('%m')
 
-calparams_filepath = 'C:/FGM_Extended_Mode/calibration'
+
 
 formatted_entry = ext_entry.strftime('%Y%m%d')
 
@@ -798,7 +800,7 @@ metadata_savename =  filebase_cal + '/' + craft + '_' + start_time + '_' + end_t
 
 f = open(metadata_savename, "w")
 f.write('export PATH=$PATH:/cluster/operations/software/dp/bin/:/cluster/operations/software/caa \n')
-#f.write('export FGMPATH=/cluster/operations/calibration/tubs_mirror/' + str(datadate[:4]) + '/' + str(datadate[4:6]) + '\n')
+#f.write('export FGMPATH=$PATH:/cluster/operations/calibration/tubs_mirror/' + str(datadate[:4]) + '/' + str(datadate[4:6]) + ' \n')
 # pointing FGMPATH at my own calibration folder containing all calibration files; not sure if this is okay to do 
 # should check wtih Chris/Tim on this
 f.write('export FGMPATH=/home/lme19/calibration \n')
