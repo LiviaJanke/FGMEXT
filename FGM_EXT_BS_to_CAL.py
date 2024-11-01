@@ -49,6 +49,8 @@ sys.path.append('C:/Users/Livia/Documents/FGMEXT/Lib')
 
 calparams_filepath = 'C:/FGM_Extended_Mode/calibration'
 
+BS_filepath = 'C:/FGM_Extended_Mode/BS_raw_files/'
+
 import numpy as np
 
 from fgmfiletools import fgmsave
@@ -199,8 +201,8 @@ def packet_decoding_odd(ext_bytes):
 
 
 plt.rcParams['lines.linewidth'] = 0
-plt.rcParams['lines.marker'] = '.'
-plt.rcParams['lines.markersize'] = 0.5
+#plt.rcParams['lines.marker'] = '.'
+#plt.rcParams['lines.markersize'] = 1
 
 def quickplot(titletext,xlabeltext,ylabeltext):
     plt.subplots(5,1,sharex=True,height_ratios=[2,2,2,2,1])
@@ -288,7 +290,7 @@ validphid=(0x1F,0x47,0x6F,0x97,0x26,0x4E,0x76,0x9E,0x2D,0x55,0x7D,0xA5)
 sciphid=(0x1F,0x47,0x6F,0x97,0x26,0x4E,0x76,0x9E)
 fgmhkphid=(0x2D,0x55,0x7D,0xA5)
 
-#%%
+
 
 starts_stops_spins_df = pd.read_csv('C:/FGM_Extended_Mode/Lib/' + craft + '_SATT_start_stop_spins',names = ['Starts', 'Stops', 'Spins'])
 
@@ -304,7 +306,7 @@ ext_exits = pd.to_datetime(ext_exits_df[0])
 
 del ext_exits_df
 
-MSA_dumps_df = pd.read_csv('C:/FGM_Extended_Mode/Lib/' + craft + '_MSA_Dump_times', header = None)
+MSA_dumps_df = pd.read_csv(craft + '_MSA_Dump_times', header = None)
 
 MSA_dumps = pd.to_datetime(MSA_dumps_df[0])
 
@@ -361,7 +363,6 @@ if MSA_dump.strftime('%Y%m%d') == next_MSA_dump.strftime('%Y%m%d'):
 if MSA_dump.strftime('%Y%m%d') == prev_MSA_dump.strftime('%Y%m%d'):
     late_half = True
     print('Dump Contains two EXT periods - this is the second')
-    #raise Exception("Late Half - haven't covered this case in the code yet")
     
 closest_start = np.min(abs(pd.to_datetime(starts_stops_spins_df['Starts']) - ext_entry))
 
@@ -377,6 +378,8 @@ if closest_start >= closest_stop:
 
 t_spin = 60 / starts_stops_spins_df['Spins'].iloc[SATT_index]
 
+
+del closest_start, closest_stop, starts_stops_spins_df, SATT_index
 
 duration = ext_exit - ext_entry
 
@@ -442,8 +445,9 @@ calparams = {'x_offsets':  x_offsets,\
              'x_gains':    x_gains,\
              'yz_gains':   yz_gains}
 
-    
+del x_offsets, x_gains, y_gains, z_gains
 
+    
 class packet():
 
     counter=0
@@ -493,9 +497,11 @@ class packet():
         return("{:7s}".format("#"+str(self.pktcnt))+" | "+" ".join('{:02X}'.format(n) for n in self.cdds)+" | "+" ".join('{:02X}'.format(n) for n in self.payload[0:30]))
 
 
-BS_filename = find_BS_file(dumpdate[2:], craft, 'C:/FGM_Extended_Mode/BS_raw_files/')
+BS_filename = find_BS_file(dumpdate[2:], craft, BS_filepath)
 
 file = open(BS_filename,"rb")
+
+del BS_filename, BS_filepath, calparams_filepath, cal_filename
 
 # this is the entire BS file retrieved on the dump date, including Burst Science data 
 # D Burst Science packets have size 2232
@@ -515,15 +521,12 @@ offset=0
 while True:
     packets.append(packet(data[offset:]))
     offset+=15+len(packets[-1].payload)
-    #if packets[-1].payload[0]==0 and packets[-1].payload[1]==0x0E:
-    #    packets=packets[:-1]
     if packets[-1].size != 3596 or packets[-1].status != 15:
         packets=packets[:-1]
     if offset>=datalen:
         break
         
 
-del data
 
 
 ext_resets = [i.reset for i in packets]
@@ -539,16 +542,31 @@ valid_ext_resets = [i.reset for i in valid_ext_packets]
 
 valid_nums = [i.pktcnt for i in valid_ext_packets]
 
-del packets
+scets = [i.scet for i in packets]
+
+valid_scets = [i.scet for i in valid_ext_packets]
+
+
+del data, datalen, packets
 
 
 
-
-
-plt.plot(ext_nums, ext_resets, label = 'all')
-plt.plot(valid_nums, valid_ext_resets, label = 'valid', marker = 'x')
+plt.plot(ext_nums, ext_resets, label = 'all', markersize = 1)
+plt.plot(valid_nums, valid_ext_resets, label = 'valid', marker = 'x', markersize = 1)
+plt.title('Packet Resets')
 plt.legend()
 plt.show()
+
+
+plt.plot(scets, ext_nums,  label = 'all')
+plt.plot(valid_scets, valid_nums,  label = 'valid')
+plt.title('Packet SCETs')
+plt.legend()
+plt.show()
+
+# Use SCETS to look at multiple dataset case
+
+#%%
 
 reset_counter = 1
 
@@ -560,49 +578,23 @@ while True:
     resets.append(valid_ext_resets[reset_counter - 1])
     packet_series.append(valid_ext_packets[reset_counter - 1])
     reset_diff = np.abs(valid_ext_resets[reset_counter - 1] - valid_ext_resets[reset_counter])
-    #print(reset_diff)
+
     reset_counter +=1
-    if reset_diff > 1 or len(resets) == len(valid_ext_resets) - 1:
+    if reset_diff > 2: 
         break
-
-
+    elif len(resets) == len(valid_ext_resets) - 1:
+        break 
+    
+    
 series_decodes = [i.valid_decode for i in packet_series]
 
+next_series_start_reset = valid_ext_resets[reset_counter]
 
-# the bit below this doesn't really work 
+# Can use incrementing set of scets etc
 
-#offset_late = 0
+# and next series start reset 
 
-#if late_half == True:
-#    reset_counter +=1
-#    offset_late = len(resets)
-#    resets = []
-    
-#    while True:
-#        resets.append(ext_resets[reset_counter - 1])
-#        reset_diff = np.abs(ext_resets[reset_counter - 1] - ext_resets[reset_counter])
-        #print(reset_diff)
-#        reset_counter +=1
-#        if reset_diff > 1:
-#            break
-
-
-    
-#valid_decodes = []
-
-#for i in np.arange(1,len(resets) -1):
-#    reset_val = resets[i - 1]
-#    if reset_val in valid_ext_resets:
-        #print(reset_val)
-        #print(valid_ext_resets[i - 1])
-        #valid_decodes.append(valid_ext_packets[i - 1 + offset_late].valid_decode)
-#    else:
-#        print('missing packet')
-#        print(reset_val)
-#        print(valid_ext_resets[i - 1])
-
-
-
+# to develop second series
 
 sequential_data = pd.concat(series_decodes)
 
@@ -669,9 +661,10 @@ plt.plot(sequential_data['reset'])
 plt.title('Reset Vector for decoded EXT data')
 plt.show()
 
-filepath = 'C:/FGM_Extended_Mode/BS_ext_decoded_files' +'/' + craft + '_' + dumpdate + '_clean_decode' + '.csv'
+decode_filepath = 'C:/FGM_Extended_Mode/BS_ext_decoded_files' +'/' + craft + '_' + dumpdate + '_clean_decode' + '.csv'
 
-sequential_data.to_csv(filepath)
+sequential_data.to_csv(decode_filepath)
+
 
 
 # timestamping and scaling decoded file
