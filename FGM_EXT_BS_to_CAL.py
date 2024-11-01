@@ -45,13 +45,13 @@ index = 400
 
 lib_path = 'C:/Users/Livia/Documents/FGMEXT/Lib/'
 
-calparams_filepath = 'C:/FGM_Extended_Mode/calibration'
+calparams_filepath = 'C:/Users/Livia/Documents/FGMEXT/calibration'
 
 BS_filepath = 'C:/FGM_Extended_Mode/BS_raw_files/'
 
 
 # save location for output data
-filebase_cal = 'C:/FGM_Extended_Mode/' + craft + '_EXT_Calibrated'
+filebase_cal = 'C:/Users/Livia/Documents/FGMEXT/' + craft + '_EXT_Calibrated'
 
 
 import numpy as np
