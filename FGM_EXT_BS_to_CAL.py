@@ -27,7 +27,9 @@ Created on Sun Jul 28 11:35:50 2024
 
 craft = 'C1'
 
-index = 400
+#index = 400
+
+date = '20020123'
 #
 #
 #
@@ -68,25 +70,9 @@ import os, fnmatch
 
 from datetime import datetime, timedelta
 
-#%%
 
 
-import paramiko
-import os
 
-ssh = paramiko.SSHClient()
-ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-# ssh.load_system_host_keys()
-#ssh.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
-ssh.connect("alsvid.sp.ph.ic.ac.uk", username="lme19", password="Cantcook4shit!", port=22)
-
-ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("python find_file.py C1 2001 03 21")
-exit_code = ssh_stdout.channel.recv_exit_status() # handles async exit error 
-
-for line in ssh_stdout:
-    print(line.strip())
-
-#%%
 
 # defining functions
 
@@ -337,17 +323,22 @@ MSA_dumps = pd.to_datetime(MSA_dumps_df[0])
 
 del MSA_dumps_df
 
-#%%
 
-import fnmatch
-l = ['RT07010534.txt', 'RT07010533.txt', 'RT02010534.txt']
-pattern = 'RT0701*.txt'
-matching = fnmatch.filter(l, pattern)
-print(matching)
 
-#%%
+entries = []
 
-ext_entry = ext_entries[index]
+for i in ext_entries:
+    
+    #print(str(i.strftime('%Y%m%d')))
+    
+    if str(i.strftime('%Y%m%d')) == date:
+        
+        entries.append(np.where(ext_entries == i)[0])
+        
+index = entries[-1][0]
+    
+ext_entry = ext_entries[index]    
+
 
 next_ext_entry = ext_entries[index + 1]
 
