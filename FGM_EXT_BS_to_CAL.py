@@ -29,7 +29,7 @@ craft = 'C1'
 
 #index = 400
 
-date = '20020123'
+entry_date = '20020123'
 #
 #
 #
@@ -325,25 +325,27 @@ del MSA_dumps_df
 
 
 
-entries = []
+these_entries = []
 
 for i in ext_entries:
     
     #print(str(i.strftime('%Y%m%d')))
     
-    if str(i.strftime('%Y%m%d')) == date:
+    if str(i.strftime('%Y%m%d')) == entry_date:
         
-        entries.append(np.where(ext_entries == i)[0])
+        these_entries.append(np.where(ext_entries == i)[0])
         
-index = entries[-1][0]
+
     
-ext_entry = ext_entries[index]    
+ext_entry_index = these_entries[0][0]
+
+ext_entry = ext_entries[ext_entry_index]
 
 
-next_ext_entry = ext_entries[index + 1]
+next_ext_entry = ext_entries[ext_entry_index + 1]
 
-if index >=1:
-    prev_ext_entry = ext_entries[index - 1]
+if ext_entry_index >=1:
+    prev_ext_entry = ext_entries[ext_entry_index - 1]
     prev_ext_exit = closest_higher_date(ext_exits, prev_ext_entry)
     prev_MSA_dump =  closest_higher_date(MSA_dumps, prev_ext_exit)
 
