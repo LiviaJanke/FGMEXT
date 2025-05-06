@@ -711,28 +711,7 @@ for i in range(0,len(t)):
     y[i] = y[i] / Gyz
     z[i] = z[i] / Gyz
     
-quickplot(name+'_calibrated','time [UTC]','[nT]')
-
-
-zSCS = np.copy(x)
-xSCS = np.copy(-y)
-ySCS = np.copy(-z)
-x = xSCS
-y = ySCS
-z = zSCS
-
-quickplot(name+'_nominal_scs','time [UTC]','[nT]')
-
-
-degrees = 146.5
-theta = 2*np.pi*degrees/360
-xx,yy = np.copy(x),np.copy(y)
-x = xx*np.cos(theta) - yy*np.sin(theta)
-y = xx*np.sin(theta) + yy*np.cos(theta)
-
-quickplot(name +'_rotated_scs','time [UTC]','[nT]')
-
-
+#quickplot(name+'_calibrated','time [UTC]','[nT]')
 
 # Eliminating anomalous data points (more than 3 standard deviations beyond the mean)
 
