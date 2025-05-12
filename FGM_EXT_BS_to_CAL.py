@@ -683,6 +683,26 @@ x = np.array(sequential_data['x'].astype(float))
 y = np.array(sequential_data['y'].astype(float))
 z = np.array(sequential_data['z'].astype(float))
 
+
+change_indices = []
+
+#%%
+
+range_changes = []
+
+if [(r[i+1] - r[i]) != 0 for i in np.arange(0,len(r) - 1)] :
+    range_changes.append(i)
+    
+    
+#    delta = r[i+1] - r[i]
+    
+    
+
+
+#%%
+
+
+
 # make an estimated time axis
 
 t = make_t(ext_entry, t_spin, ext_exit, x)
