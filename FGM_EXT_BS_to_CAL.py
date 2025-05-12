@@ -25,18 +25,18 @@ Created on Sun Jul 28 11:35:50 2024
 # craft and index variables (to change)
 
 
-craft = 'C1'
+#craft = 'C1'
 
 #index = 400
 
-entry_date = '20020123'
+#entry_date = '20020123'
 #
 #
 #
 #
 #
 #
-#
+from fgmfilepaths import craft,entry_date,lib_path,calparams_filepath,BS_filepath,filebase_cal
 
 
 # the rest of the program 
@@ -45,17 +45,17 @@ entry_date = '20020123'
 
 # add your library folder to path
 
-lib_path = 'C:/FGMEXT/Lib/'
+#lib_path = 'C:/FGMEXT/Lib/'
 #lib_path = 'C:/Users/Test/Documents/FGM_Extended_Mode/Lib/'
 
-calparams_filepath = 'C:/FGM_Extended_Mode/calibration/'
+#calparams_filepath = 'C:/FGM_Extended_Mode/calibration/'
 #calparams_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/calibration'
 
-BS_filepath = 'C:/FGM_Extended_Mode/BS_raw_files/'
+#BS_filepath = 'C:/FGM_Extended_Mode/BS_raw_files/'
 
 
 # save location for output data
-filebase_cal = 'C:/FGM_Extended_Mode/' + craft + '_EXT_Calibrated/'
+#filebase_cal = 'C:/FGM_Extended_Mode/' + craft + '_EXT_Calibrated/'
 
 
 import numpy as np
@@ -756,7 +756,7 @@ print('Timebase Duration:')
 
 print(timebase_duration)
 
-savename = filebase_cal +  '/' + craft + '_' + start_time + '_' + end_time + '_calibrated.txt'
+savename = filebase_cal + craft + '_' + start_time + '_' + end_time + '_calibrated.txt'
 
 fgmsave(savename,t,x,y,z)
     
