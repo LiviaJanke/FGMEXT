@@ -6,65 +6,9 @@ Created on Sun Jul 28 11:35:50 2024
 @author: Livia
 """
 #
-#
-#
-#
-#
-#
-
-# Description
-
-# This program returns cleaned, decoded and calibrated Extended Mode data for a given craft and index (entry number)
-# Also returns a data file containing the lines needed to run ext2tvec for the generated dataset
 
 
-#
-#
-#
-#
-#
-<<<<<<< HEAD
-# craft and index variables (to change)
-
-
-#craft = 'C1'
-
-#index = 400
-
-#entry_date = '20020123'
-#
-#
-#
-#
-#
-#
 from fgmfilepaths import craft,entry_date,lib_path,calparams_filepath,BS_filepath,filebase_cal
-=======
->>>>>>> c2a50e9d251803946c2805362ecc4744659af2d7
-
-
-# the rest of the program 
-
-# importing packages
-
-<<<<<<< HEAD
-# add your library folder to path
-
-#lib_path = 'C:/FGMEXT/Lib/'
-#lib_path = 'C:/Users/Test/Documents/FGM_Extended_Mode/Lib/'
-
-#calparams_filepath = 'C:/FGM_Extended_Mode/calibration/'
-#calparams_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/calibration'
-
-#BS_filepath = 'C:/FGM_Extended_Mode/BS_raw_files/'
-
-
-# save location for output data
-#filebase_cal = 'C:/FGM_Extended_Mode/' + craft + '_EXT_Calibrated/'
-
-=======
-from fgmfilepaths import craft,entry_date,lib_path,calparams_filepath,BS_filepath,filebase_cal
->>>>>>> c2a50e9d251803946c2805362ecc4744659af2d7
 
 import numpy as np
 
@@ -78,7 +22,9 @@ import os, fnmatch
 
 from datetime import datetime, timedelta
 
-#%%
+import matplotlib.pyplot as plt
+
+
 # defining functions
 
 #s16 changes unsigned 16 bit hex numbers to signed (positive and negative)
@@ -332,8 +278,6 @@ these_entries = []
 
 for i in ext_entries:
     
-    #print(str(i.strftime('%Y%m%d')))
-    
     if str(i.strftime('%Y%m%d')) == entry_date:
         
         these_entries.append(np.where(ext_entries == i)[0])
@@ -429,7 +373,7 @@ year = ext_entry.strftime('%y')
 
 month = ext_entry.strftime('%m')
 
-#%%
+
 
 formatted_entry = ext_entry.strftime('%Y%m%d')
 
@@ -535,7 +479,6 @@ del BS_filename, BS_filepath, calparams_filepath, cal_filename
 # D Burst Science packets have size 2232
 # Normal Science and Data Dump (aka Extended Mode ?) both have size 3596
 
-#%%
 data=bytearray(file.read())
 file.close()
 datalen=len(data)    
@@ -590,7 +533,6 @@ plt.title('Packet SCETs')
 plt.legend()
 plt.show()
 
-#%%
 
 # Use SCETS to look at multiple dataset case
 
@@ -640,7 +582,6 @@ plt.title('AF and BEF indices (missing ends, missing starts)')
 plt.legend()
 plt.show()
 
-#%%
 
 for i in af_indices:
         
@@ -674,23 +615,34 @@ sequential_data.drop(labels = bef_indices, axis = 0, inplace = True)
 
 sequential_data.reset_index(drop = True, inplace = True)
 
-#%%
 
 
-
-# timestamping and scaling decoded file
-
-#%%
 # change to array
-#resets = sequential_data['reset'].astype(float)
+
+#remove the vectors at which a range change occurs
 ra = np.array(sequential_data['resolution'].astype(int))
 
 range_change_index = [i+1 if (ra[i+1] - ra[i]) != 0 else i-i for i in np.arange(0,len(ra)-1)]
 
-range_change_indices  = list(filter(lambda num: num != 0, range_change_index))
+                       
+#finding the index of the first vector after a range change
+#rci is an acronym for range change indices
+
+rci  = list(filter(lambda num: num != 0, range_change_index))
+
+#and the indices of the next 3 
+rci_h1 = [i+1 for i in rci]
+rci_h2 = [i+1 for i in rci]
+rci_h3 = [i+1 for i in rci]
+
+
+
+range_change_indices = rci + rci_h1 + rci_h2 +rci_h3
+
 
 sequential_data.drop(labels = range_change_indices, axis = 0, inplace = True)
 
+#change to array
 
 resets = sequential_data['reset'].astype(float)
 r = np.array(sequential_data['resolution'].astype(int))
@@ -707,11 +659,11 @@ t = make_t(ext_entry, t_spin, ext_exit, x)
 
 name = craft + '_' + datadate
 
-#%%
+
 
 quickplot(name + ' Raw Timestamped','time [UTC]','count [#]')
 
-#%%
+
 
 # nominal scaling
 # nominal change from engineering units to nanotesla
@@ -723,7 +675,6 @@ z = z * (2*64/2**15) * 4**(r-2) * (np.pi/4)
 
 quickplot(name + ' Nominal Scaling','time [UTC]','count [#]')
 
-#%%
 
 # apply approximate cal using orbit cal see notes 30-Jan-24
 
@@ -735,33 +686,6 @@ for i in range(0,len(t)):
     y[i] = y[i] / Gyz
     z[i] = z[i] / Gyz
     
-<<<<<<< HEAD
-#quickplot(name+'_calibrated','time [UTC]','[nT]')
-=======
-quickplot(name+'_calibrated','time [UTC]','[nT]')
-
-#%%
-
-zSCS = np.copy(x)
-xSCS = np.copy(-y)
-ySCS = np.copy(-z)
-x = xSCS
-y = ySCS
-z = zSCS
-
-quickplot(name+'_nominal_scs','time [UTC]','[nT]')
-
-#%%
-degrees = 146.5
-theta = 2*np.pi*degrees/360
-xx,yy = np.copy(x),np.copy(y)
-x = xx*np.cos(theta) - yy*np.sin(theta)
-y = xx*np.sin(theta) + yy*np.cos(theta)
-
-quickplot(name +'_rotated_scs','time [UTC]','[nT]')
-#%%
-
->>>>>>> c2a50e9d251803946c2805362ecc4744659af2d7
 
 # Eliminating anomalous data points (more than 3 standard deviations beyond the mean)
 
@@ -781,7 +705,7 @@ r = np.delete(r, ordered_outliers)
 
 quickplot(name +'_cleaned','time [UTC]','[nT]')
 
-#%%
+
 
 start_time = t[0].strftime('%Y%m%d_%H%M%S')
 
@@ -817,7 +741,6 @@ metadata_savename =  filebase_cal + '/' + craft + '_' + start_time + '_' + end_t
 # some more quality control and despiking and general evaluation stuff required
 
 
-
 f = open(metadata_savename, "w")
 f.write('export PATH=$PATH:/cluster/operations/software/dp/bin/:/cluster/operations/software/caa \n')
 f.write('export FGMPATH=$PATH:/cluster/operations/calibration/tubs_mirror/' + str(datadate[:4]) + '/' + str(datadate[4:6]) + ' \n')
@@ -838,8 +761,3 @@ f.close()
 
 
 
-
-
-
-
-# %%
