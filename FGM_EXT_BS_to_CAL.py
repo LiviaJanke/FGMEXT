@@ -672,11 +672,24 @@ sequential_data.drop(labels = bef_indices, axis = 0, inplace = True)
 
 sequential_data.reset_index(drop = True, inplace = True)
 
+#%%
+
+
 
 # timestamping and scaling decoded file
 
-
+#%%
 # change to array
+#resets = sequential_data['reset'].astype(float)
+ra = np.array(sequential_data['resolution'].astype(int))
+
+range_change_index = [i+1 if (ra[i+1] - ra[i]) != 0 else i-i for i in np.arange(0,len(ra)-1)]
+
+range_change_indices  = list(filter(lambda num: num != 0, range_change_index))
+
+sequential_data.drop(labels = range_change_indices, axis = 0, inplace = True)
+
+
 resets = sequential_data['reset'].astype(float)
 r = np.array(sequential_data['resolution'].astype(int))
 x = np.array(sequential_data['x'].astype(float))
@@ -685,23 +698,6 @@ z = np.array(sequential_data['z'].astype(float))
 
 
 change_indices = []
-
-#%%
-
-range_changes = []
-
-if [(r[i+1] - r[i]) != 0 for i in np.arange(0,len(r) - 1)] :
-    range_changes.append(i)
-    
-    
-#    delta = r[i+1] - r[i]
-    
-    
-
-
-#%%
-
-
 
 # make an estimated time axis
 
