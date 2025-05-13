@@ -181,7 +181,7 @@ def quickplot(titletext,xlabeltext,ylabeltext):
 
 def make_t(ext_entry, t_spin, ext_exit, x):
     t = []
-    for i in range(0,len(x)):
+    for i in range(0,x):
         t.append(ext_entry + timedelta(seconds=i*t_spin))
     return t
 
@@ -482,7 +482,7 @@ del BS_filename, BS_filepath, calparams_filepath, cal_filename
 data=bytearray(file.read())
 file.close()
 datalen=len(data)    
-        
+ 
 
 packets=[]
 
@@ -516,7 +516,6 @@ valid_nums = [i.pktcnt for i in valid_ext_packets]
 scets = [i.scet for i in packets]
 
 valid_scets = [i.scet for i in valid_ext_packets]
-
 
 del data, datalen, packets
 
@@ -565,9 +564,21 @@ next_series_start_reset = valid_ext_resets[reset_counter]
 
 # to develop second series
 
+#%%
+# find the indices missing from sequential data here and use them to remove the corresponsing t values
+
+#%%
+
 sequential_data = pd.concat(series_decodes)
 
 sequential_data.reset_index(drop = True, inplace = True)
+
+
+# Make a basic timebase using spin duration and number of vectors
+
+timebase_length = int(len(sequential_data))
+
+t_actual = make_t(ext_entry, t_spin, ext_exit, timebase_length)
 
 
 bef_indices = sequential_data.loc[sequential_data['x'] == 'bef'].index.tolist()
@@ -615,16 +626,14 @@ sequential_data.drop(labels = bef_indices, axis = 0, inplace = True)
 
 sequential_data.reset_index(drop = True, inplace = True)
 
-
-
 # change to array
 
-#remove the vectors at which a range change occurs
+
 ra = np.array(sequential_data['resolution'].astype(int))
 
+#remove the vectors at which a range change occurs
 range_change_index = [i+1 if (ra[i+1] - ra[i]) != 0 else i-i for i in np.arange(0,len(ra)-1)]
-
-                       
+                 
 #finding the index of the first vector after a range change
 #rci is an acronym for range change indices
 
@@ -634,10 +643,12 @@ rci  = list(filter(lambda num: num != 0, range_change_index))
 rci_h1 = [i+1 for i in rci]
 rci_h2 = [i+1 for i in rci]
 rci_h3 = [i+1 for i in rci]
+rci_h4 = [i+1 for i in rci]
+rci_h5 = [i+1 for i in rci]
+rci_h6 = [i+1 for i in rci]
+rci_h7 = [i+1 for i in rci]
 
-
-
-range_change_indices = rci + rci_h1 + rci_h2 +rci_h3
+range_change_indices = rci + rci_h1 + rci_h2 +rci_h3 + rci_h4 + rci_h5 + rci_h6 + rci_h7
 
 
 sequential_data.drop(labels = range_change_indices, axis = 0, inplace = True)
@@ -653,13 +664,10 @@ z = np.array(sequential_data['z'].astype(float))
 
 change_indices = []
 
-# make an estimated time axis
-
-t = make_t(ext_entry, t_spin, ext_exit, x)
 
 name = craft + '_' + datadate
 
-
+t = t_actual[0:len(x)]
 
 quickplot(name + ' Raw Timestamped','time [UTC]','count [#]')
 
