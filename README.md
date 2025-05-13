@@ -1,4 +1,7 @@
 # FGMEXT
+
+#### Forked from LiviaJanke/FGMEXT to cc87eof/FGMEXT on 25-Apr-25
+
 Fluxgate Magnetometer Extended Mode Data processing
 
 How to Use:

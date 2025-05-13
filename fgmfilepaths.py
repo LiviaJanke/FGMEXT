@@ -16,18 +16,9 @@ craft = 'C1'
 
 entry_date = '20020403'
 #
-#
-#
-#
-#
-#
-#
-
-
-
-
 
 # add your library folder to path
+
 
 #lib_path = 'Lib/'
 lib_path = 'C:/Users/Test/Documents/FGMEXT/Lib/'

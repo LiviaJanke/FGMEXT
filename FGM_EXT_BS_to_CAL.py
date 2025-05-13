@@ -1,3 +1,4 @@
+#%% 
 # -*- coding: utf-8 -*-
 """
 Created on Sun Jul 28 11:35:50 2024
@@ -5,58 +6,9 @@ Created on Sun Jul 28 11:35:50 2024
 @author: Livia
 """
 #
-#
-#
-#
-#
-#
-
-# Description
-
-# This program returns cleaned, decoded and calibrated Extended Mode data for a given craft and index (entry number)
-# Also returns a data file containing the lines needed to run ext2tvec for the generated dataset
 
 
-#
-#
-#
-#
-#
-# craft and index variables (to change)
-
-
-#craft = 'C1'
-
-#index = 400
-
-#entry_date = '20020123'
-#
-#
-#
-#
-#
-#
 from fgmfilepaths import craft,entry_date,lib_path,calparams_filepath,BS_filepath,filebase_cal
-
-
-# the rest of the program 
-
-# importing packages
-
-# add your library folder to path
-
-#lib_path = 'C:/FGMEXT/Lib/'
-#lib_path = 'C:/Users/Test/Documents/FGM_Extended_Mode/Lib/'
-
-#calparams_filepath = 'C:/FGM_Extended_Mode/calibration/'
-#calparams_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/calibration'
-
-#BS_filepath = 'C:/FGM_Extended_Mode/BS_raw_files/'
-
-
-# save location for output data
-#filebase_cal = 'C:/FGM_Extended_Mode/' + craft + '_EXT_Calibrated/'
-
 
 import numpy as np
 
@@ -70,8 +22,7 @@ import os, fnmatch
 
 from datetime import datetime, timedelta
 
-
-
+import matplotlib.pyplot as plt
 
 
 # defining functions
@@ -211,7 +162,7 @@ def packet_decoding_odd(ext_bytes):
     return df_p
 
 
-plt.rcParams['lines.linewidth'] = 0
+plt.rcParams['lines.linewidth'] = 1
 #plt.rcParams['lines.marker'] = '.'
 #plt.rcParams['lines.markersize'] = 1
 
@@ -301,8 +252,6 @@ validphid=(0x1F,0x47,0x6F,0x97,0x26,0x4E,0x76,0x9E,0x2D,0x55,0x7D,0xA5)
 sciphid=(0x1F,0x47,0x6F,0x97,0x26,0x4E,0x76,0x9E)
 fgmhkphid=(0x2D,0x55,0x7D,0xA5)
 
-
-
 starts_stops_spins_df = pd.read_csv(lib_path + craft + '_SATT_start_stop_spins',names = ['Starts', 'Stops', 'Spins'])
 
 ext_entries_df = pd.read_csv(lib_path + craft + '_Ext_Entries', header = None)
@@ -328,8 +277,6 @@ del MSA_dumps_df
 these_entries = []
 
 for i in ext_entries:
-    
-    #print(str(i.strftime('%Y%m%d')))
     
     if str(i.strftime('%Y%m%d')) == entry_date:
         
@@ -377,8 +324,6 @@ if duration <= timedelta(seconds = 0):
         
     raise Exception("Negatve/Zero Duration")
         
-
-
 late_half = False
 early_half = False
 
@@ -435,6 +380,7 @@ formatted_entry = ext_entry.strftime('%Y%m%d')
 formatted_exit = ext_exit.strftime('%Y%m%d')
 
 cal_filename = find_cal_file(formatted_entry, formatted_exit,  calparams_filepath)
+print('Calibration File \n',cal_filename)
 
 cal_params = pd.read_csv(cal_filename, header = None, sep = ',|:', names = ['param', 'x', 'y', 'z'], on_bad_lines = 'skip', engine = 'python') 
 
@@ -473,7 +419,6 @@ calparams = {'x_offsets':  x_offsets,\
              'yz_gains':   yz_gains}
 
 del x_offsets, x_gains, y_gains, z_gains
-
     
 class packet():
 
@@ -523,8 +468,8 @@ class packet():
     def __str__(self):
         return("{:7s}".format("#"+str(self.pktcnt))+" | "+" ".join('{:02X}'.format(n) for n in self.cdds)+" | "+" ".join('{:02X}'.format(n) for n in self.payload[0:30]))
 
-
 BS_filename = find_BS_file(dumpdate[2:], craft, BS_filepath)
+print('Burst Science file \n',BS_filename)
 
 file = open(BS_filename,"rb")
 
@@ -533,7 +478,6 @@ del BS_filename, BS_filepath, calparams_filepath, cal_filename
 # this is the entire BS file retrieved on the dump date, including Burst Science data 
 # D Burst Science packets have size 2232
 # Normal Science and Data Dump (aka Extended Mode ?) both have size 3596
-
 
 data=bytearray(file.read())
 file.close()
@@ -576,8 +520,6 @@ valid_scets = [i.scet for i in valid_ext_packets]
 
 del data, datalen, packets
 
-
-
 plt.plot(ext_nums, ext_resets, label = 'all', markersize = 1)
 plt.plot(valid_nums, valid_ext_resets, label = 'valid', marker = 'x', markersize = 1)
 plt.title('Packet Resets')
@@ -590,6 +532,7 @@ plt.plot(valid_scets, valid_nums,  label = 'valid')
 plt.title('Packet SCETs')
 plt.legend()
 plt.show()
+
 
 # Use SCETS to look at multiple dataset case
 
@@ -672,23 +615,34 @@ sequential_data.drop(labels = bef_indices, axis = 0, inplace = True)
 
 sequential_data.reset_index(drop = True, inplace = True)
 
-#%%
 
 
-
-# timestamping and scaling decoded file
-
-#%%
 # change to array
-#resets = sequential_data['reset'].astype(float)
+
+#remove the vectors at which a range change occurs
 ra = np.array(sequential_data['resolution'].astype(int))
 
 range_change_index = [i+1 if (ra[i+1] - ra[i]) != 0 else i-i for i in np.arange(0,len(ra)-1)]
 
-range_change_indices  = list(filter(lambda num: num != 0, range_change_index))
+                       
+#finding the index of the first vector after a range change
+#rci is an acronym for range change indices
+
+rci  = list(filter(lambda num: num != 0, range_change_index))
+
+#and the indices of the next 3 
+rci_h1 = [i+1 for i in rci]
+rci_h2 = [i+1 for i in rci]
+rci_h3 = [i+1 for i in rci]
+
+
+
+range_change_indices = rci + rci_h1 + rci_h2 +rci_h3
+
 
 sequential_data.drop(labels = range_change_indices, axis = 0, inplace = True)
 
+#change to array
 
 resets = sequential_data['reset'].astype(float)
 r = np.array(sequential_data['resolution'].astype(int))
@@ -705,7 +659,11 @@ t = make_t(ext_entry, t_spin, ext_exit, x)
 
 name = craft + '_' + datadate
 
+
+
 quickplot(name + ' Raw Timestamped','time [UTC]','count [#]')
+
+
 
 # nominal scaling
 # nominal change from engineering units to nanotesla
@@ -717,6 +675,7 @@ z = z * (2*64/2**15) * 4**(r-2) * (np.pi/4)
 
 quickplot(name + ' Nominal Scaling','time [UTC]','count [#]')
 
+
 # apply approximate cal using orbit cal see notes 30-Jan-24
 
 for i in range(0,len(t)):
@@ -727,7 +686,6 @@ for i in range(0,len(t)):
     y[i] = y[i] / Gyz
     z[i] = z[i] / Gyz
     
-#quickplot(name+'_calibrated','time [UTC]','[nT]')
 
 # Eliminating anomalous data points (more than 3 standard deviations beyond the mean)
 
@@ -746,6 +704,7 @@ t = np.delete(t, ordered_outliers)
 r = np.delete(r, ordered_outliers)
 
 quickplot(name +'_cleaned','time [UTC]','[nT]')
+
 
 
 start_time = t[0].strftime('%Y%m%d_%H%M%S')
@@ -782,7 +741,6 @@ metadata_savename =  filebase_cal + '/' + craft + '_' + start_time + '_' + end_t
 # some more quality control and despiking and general evaluation stuff required
 
 
-
 f = open(metadata_savename, "w")
 f.write('export PATH=$PATH:/cluster/operations/software/dp/bin/:/cluster/operations/software/caa \n')
 f.write('export FGMPATH=$PATH:/cluster/operations/calibration/tubs_mirror/' + str(datadate[:4]) + '/' + str(datadate[4:6]) + ' \n')
@@ -800,9 +758,6 @@ f.write('./ext2tvec -i ' + str(craft) + '_EXT_Calibrated/' + str(craft) +  '_' +
 
 f.close()
         
-
-
-
 
 
 
