@@ -191,12 +191,21 @@ def make_t(ext_entry, t_spin, ext_exit, x):
 
 
 def find_cal_file(pentry, pexit, path):
-
+    print('pentry:', pentry)
+    print('pexit:', pexit)
     pattern_entry = '* __' + pentry + '*'
     pattern_exit = '*' + pexit + '*'
     pattern_month_exit = '*' + pexit[:-1] + '*'
     pattern_month_entry = '*' + pexit[:-1] + '*'
     pattern_month_whole = '*' + pexit[:-2] + '*'
+
+    print('Searching for calibration file with patterns:')
+    print(pattern_entry)    
+    print(pattern_exit)
+    print(pattern_month_entry)
+    print(pattern_month_exit)   
+    print(pattern_month_whole)
+
     for root, dirs, files in os.walk(path):
         
         for name in files:
