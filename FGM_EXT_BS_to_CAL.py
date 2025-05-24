@@ -10,6 +10,9 @@ Created on Sun Jul 28 11:35:50 2024
 
 from fgmfilepaths import craft,entry_date,lib_path,calparams_filepath,BS_filepath,filebase_cal
 
+print('Craft: ' + craft)
+print('Entry Date: ' + entry_date)
+
 import numpy as np
 
 from fgmfiletools import fgmsave
@@ -363,9 +366,8 @@ print('EXT Exit Time')
 print(ext_exit)
 print('EXT Duration')
 print(duration)
-
+#%%
 dumpdate = MSA_dump.strftime('%Y%m%d')
-
 
 datadate = ext_entry.strftime('%Y%m%d')
 
@@ -373,23 +375,19 @@ year = ext_entry.strftime('%y')
 
 month = ext_entry.strftime('%m')
 
-
-
 formatted_entry = ext_entry.strftime('%Y%m%d')
 
 formatted_exit = ext_exit.strftime('%Y%m%d')
 
 cal_filename = find_cal_file(formatted_entry, formatted_exit,  calparams_filepath)
 print('Calibration File \n',cal_filename)
-
+#%%
 cal_params = pd.read_csv(cal_filename, header = None, sep = ',|:', names = ['param', 'x', 'y', 'z'], on_bad_lines = 'skip', engine = 'python') 
 
 x_offsets = cal_params[cal_params['param'].str.strip() == 'Offsets(nT)']['x'].astype(float).values.tolist()
 x_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['x'].astype(float).values.tolist()
 y_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['y'].astype(float).values.tolist()
 z_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['z'].astype(float).values.tolist()
-
-
 
 while len(x_offsets) < 6:
     x_offsets.append(0.0)
@@ -403,7 +401,6 @@ while len(y_gains) < 6:
 while len(z_gains) < 6:
     z_gains.append(1.0)
 
-
 yz_gains = []
 
 for i in np.arange(0,6):
@@ -411,8 +408,6 @@ for i in np.arange(0,6):
     yz_gain = (float(y_gains[i]) + float(z_gains[i])) / 2.0
         
     yz_gains.append(yz_gain)
-        
-
 
 calparams = {'x_offsets':  x_offsets,\
              'x_gains':    x_gains,\
@@ -470,7 +465,7 @@ class packet():
 
 BS_filename = find_BS_file(dumpdate[2:], craft, BS_filepath)
 print('Burst Science file \n',BS_filename)
-
+#%%
 file = open(BS_filename,"rb")
 
 del BS_filename, BS_filepath, calparams_filepath, cal_filename
@@ -482,12 +477,10 @@ del BS_filename, BS_filepath, calparams_filepath, cal_filename
 data=bytearray(file.read())
 file.close()
 datalen=len(data)    
- 
 
 packets=[]
 
 offset=0
-
 
 while True:
     packets.append(packet(data[offset:]))
@@ -497,9 +490,6 @@ while True:
     if offset>=datalen:
         break
         
-
-
-
 ext_resets = [i.reset for i in packets]
 
 ext_nums = [i.pktcnt for i in packets]
@@ -531,10 +521,8 @@ plt.plot(valid_scets, valid_nums,  label = 'valid')
 plt.title('Packet SCETs')
 plt.legend()
 plt.show()
-
-
+#%%
 # Use SCETS to look at multiple dataset case
-
 
 reset_counter = 1
 
@@ -552,8 +540,7 @@ while True:
         break
     elif len(resets) == len(valid_ext_resets) - 1:
         break 
-    
-    
+
 series_decodes = [i.valid_decode for i in packet_series]
 
 next_series_start_reset = valid_ext_resets[reset_counter]
@@ -564,15 +551,11 @@ next_series_start_reset = valid_ext_resets[reset_counter]
 
 # to develop second series
 
-#%%
 # find the indices missing from sequential data here and use them to remove the corresponsing t values
-
-#%%
 
 sequential_data = pd.concat(series_decodes)
 
 sequential_data.reset_index(drop = True, inplace = True)
-
 
 # Make a basic timebase using spin duration and number of vectors
 
@@ -592,7 +575,7 @@ plt.plot(af_indices, label = 'af')
 plt.title('AF and BEF indices (missing ends, missing starts)')
 plt.legend()
 plt.show()
-
+#%%
 
 for i in af_indices:
         
@@ -671,7 +654,7 @@ t = t_actual[0:len(x)]
 
 quickplot(name + ' Raw Timestamped','time [UTC]','count [#]')
 
-
+#%%
 
 # nominal scaling
 # nominal change from engineering units to nanotesla
@@ -681,8 +664,8 @@ x = x * (2*64/2**15) * 4**(r-2)
 y = y * (2*64/2**15) * 4**(r-2) * (np.pi/4)
 z = z * (2*64/2**15) * 4**(r-2) * (np.pi/4)
 
-quickplot(name + ' Nominal Scaling','time [UTC]','count [#]')
-
+quickplot(name + ' Nominal Scaling','time [UTC]','[nT]')
+#%%
 
 # apply approximate cal using orbit cal see notes 30-Jan-24
 
@@ -694,7 +677,8 @@ for i in range(0,len(t)):
     y[i] = y[i] / Gyz
     z[i] = z[i] / Gyz
     
-
+quickplot(name + ' Calibrated','time [UTC]','[nT]')
+#%%
 # Eliminating anomalous data points (more than 3 standard deviations beyond the mean)
 
 x_outlier_indices = np.where(np.abs(x - np.mean(x)) > (np.std(x) * 3))[0]
@@ -713,7 +697,7 @@ r = np.delete(r, ordered_outliers)
 
 quickplot(name +'_cleaned','time [UTC]','[nT]')
 
-
+#%%
 
 start_time = t[0].strftime('%Y%m%d_%H%M%S')
 
@@ -769,3 +753,5 @@ f.close()
 
 
 
+
+# %%
