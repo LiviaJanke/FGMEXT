@@ -15,7 +15,7 @@ print('Entry Date: ' + entry_date)
 
 import numpy as np
 
-from fgmfiletools import fgmsave
+from fgmfiletools import fgmsave,fgmopen
 
 import matplotlib.pyplot as plt
 
@@ -27,6 +27,7 @@ from datetime import datetime, timedelta
 
 import matplotlib.pyplot as plt
 
+from functions import quicksave,quickopen
 
 # defining functions
 
@@ -190,43 +191,33 @@ def make_t(ext_entry, t_spin, ext_exit, x):
 
 
 
-def find_cal_file(pentry, pexit, path):
-    print('pentry:', pentry)
-    print('pexit:', pexit)
-    pattern_entry = '* __' + pentry + '*'
-    pattern_exit = '*' + pexit + '*'
-    pattern_month_exit = '*' + pexit[:-1] + '*'
-    pattern_month_entry = '*' + pexit[:-1] + '*'
-    pattern_month_whole = '*' + pexit[:-2] + '*'
-
-    print('Searching for calibration file with patterns:')
-    print(pattern_entry)    
-    print(pattern_exit)
-    print(pattern_month_entry)
-    print(pattern_month_exit)   
-    print(pattern_month_whole)
-
+def find_cal_file(craft,entry,path):
+    
     for root, dirs, files in os.walk(path):
         
         for name in files:
-                
-            if fnmatch.fnmatch(name, pattern_entry):
-                return(os.path.join(root, name))
-                      
-            elif fnmatch.fnmatch(name, pattern_exit):
-                return(os.path.join(root, name))
-                
-            elif fnmatch.fnmatch(name, pattern_month_exit):
-                return(os.path.join(root, name))
-            
-            elif fnmatch.fnmatch(name, pattern_month_entry):
-                return(os.path.join(root, name))       
-            
-            elif fnmatch.fnmatch(name, pattern_month_whole):
-                return(os.path.join(root, name))  
-            
 
+            if len(name) == 58: 
+
+                ncraft = name[0:2]
+                nstartyear = int(name[16:20])
+                nstartmonth = int(name[20:22])
+                nstartday = int(name[22:24])
+                nstarthour = int(name[25:27])
+                nendyear = int(name[32:36])
+                nendmonth = int(name[36:38])
+                nendday = int(name[38:40])
+                nendhour = int(name[41:43])
+                nstart = pd.Timestamp(nstartyear, nstartmonth, nstartday, nstarthour, 0, 0)
+                nend = pd.Timestamp(nendyear, nendmonth, nendday, nendhour, 0, 0)
+    
+                # test entry time within calfile start/end validity interval
+                if ncraft == craft and entry >= nstart and entry < nend:
+                    return os.path.join(root, name)
             
+        print('No matching calibration file found for craft:', craft, 'between', entry, 'and', exit)
+        return None
+        
 
 def find_BS_file(date, craft, path):
 
@@ -388,12 +379,12 @@ formatted_entry = ext_entry.strftime('%Y%m%d')
 
 formatted_exit = ext_exit.strftime('%Y%m%d')
 
-cal_filename = find_cal_file(formatted_entry, formatted_exit,  calparams_filepath)
+cal_filename = find_cal_file(craft, ext_entry, calparams_filepath)
 print('Calibration File \n',cal_filename)
 #%%
 cal_params = pd.read_csv(cal_filename, header = None, sep = ',|:', names = ['param', 'x', 'y', 'z'], on_bad_lines = 'skip', engine = 'python') 
 
-x_offsets = cal_params[cal_params['param'].str.strip() == 'Offsets(nT)']['x'].astype(float).values.tolist()
+x_offsets = cal_params[cal_params['param'].str.strip() == 'Offsets (nT)']['x'].astype(float).values.tolist()
 x_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['x'].astype(float).values.tolist()
 y_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['y'].astype(float).values.tolist()
 z_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['z'].astype(float).values.tolist()
@@ -687,27 +678,29 @@ for i in range(0,len(t)):
     z[i] = z[i] / Gyz
     
 quickplot(name + ' Calibrated','time [UTC]','[nT]')
-#%%
+
 # Eliminating anomalous data points (more than 3 standard deviations beyond the mean)
 
-x_outlier_indices = np.where(np.abs(x - np.mean(x)) > (np.std(x) * 3))[0]
-y_outlier_indices = np.where(np.abs(y - np.mean(y)) > (np.std(y) * 3))[0]
-z_outlier_indices = np.where(np.abs(z - np.mean(z)) > (np.std(z) * 3))[0]
+# x_outlier_indices = np.where(np.abs(x - np.mean(x)) > (np.std(x) * 3))[0]
+# y_outlier_indices = np.where(np.abs(y - np.mean(y)) > (np.std(y) * 3))[0]
+# z_outlier_indices = np.where(np.abs(z - np.mean(z)) > (np.std(z) * 3))[0]
 
-outlier_indices = np.hstack((x_outlier_indices, y_outlier_indices, z_outlier_indices))
+# outlier_indices = np.hstack((x_outlier_indices, y_outlier_indices, z_outlier_indices))
 
-ordered_outliers = np.sort(outlier_indices)
+# ordered_outliers = np.sort(outlier_indices)
 
-x = np.delete(x, ordered_outliers)
-y = np.delete(y, ordered_outliers)
-z = np.delete(z, ordered_outliers)
-t = np.delete(t, ordered_outliers)
-r = np.delete(r, ordered_outliers)
+# x = np.delete(x, ordered_outliers)
+# y = np.delete(y, ordered_outliers)
+# z = np.delete(z, ordered_outliers)
+# t = np.delete(t, ordered_outliers)
+# r = np.delete(r, ordered_outliers)
 
-quickplot(name +'_cleaned','time [UTC]','[nT]')
+# quickplot(name +'_cleaned','time [UTC]','[nT]')
+
+
+
 
 #%%
-
 start_time = t[0].strftime('%Y%m%d_%H%M%S')
 
 start_time_iso = t[0].strftime('%Y-%m-%dT%H:%M:%SZ') 
@@ -736,6 +729,8 @@ savename = filebase_cal + craft + '_' + start_time + '_' + end_time + '_calibrat
 
 fgmsave(savename,t,x,y,z)
     
+
+#%%
 metadata_savename =  filebase_cal + '/' + craft + '_' + start_time + '_' + end_time + '_info.txt'
 
 
@@ -764,3 +759,14 @@ f.close()
 
 
 # %%
+# if necessary, edit the _calibrated.txt file, directly in the editor, to remove any residual spikes
+# then reopen here and plot to check before continuing with the processing steps
+def finalcheck():
+    # open the file
+    filename = filebase_cal + '/' + craft + '_' + start_time + '_' + end_time + '_calibrated.txt'
+    dataset = quickopen(filename)
+    
+    # plot the data
+    quickplot(craft + ' Final Check', 'time [UTC]', '[nT]')
+    
+    return t, x, y, z
