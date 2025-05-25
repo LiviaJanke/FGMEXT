@@ -13,16 +13,32 @@ from os.path import isfile
 
 
 # save in ascii format as per dp output
-def fgmsave(filename,t,x,y,z):
+# def fgmsave(filename,t,x,y,z):
+#     file = open(filename,'w')
+#     for i in range(0,len(t)):
+#         aline = t[i].isoformat(timespec='milliseconds')[0:23] + 'Z'
+#         aline += " {0: 10.4f} {1: 10.4f} {2: 10.4f}\n".format(x[i],y[i],z[i])
+#         file.write(aline)
+#     file.close()
+#     return
+
+#ADD SAVING RANGE VALUES IN NEW COLUMN TO FGMSAVE - leading spaces in front
+def fgmsave(filename,t,x,y,z,r=None):
+    '''Save in ASCII format per DP output with optional range'''
+    if r is None:
+        rangeFlag = False
+    else:
+        rangeFlag = True
     file = open(filename,'w')
     for i in range(0,len(t)):
-        aline = t[i].isoformat(timespec='milliseconds')[0:23] + 'Z'
-        aline += " {0: 10.4f} {1: 10.4f} {2: 10.4f}\n".format(x[i],y[i],z[i])
+        aline = t[i].isoformat(timespec='milliseconds')[0:23] + "Z"
+        aline += " {0: 10.4f} {1: 10.4f} {2: 10.4f}".format(x[i],y[i],z[i])
+        if rangeFlag:
+            aline += " {0: 1d}".format(r[i])
+        aline += "\n"
         file.write(aline)
     file.close()
     return
-
-#ADD SAVING RANGE VALUES IN NEW COLUMN TO FGMSAVE - leading spaces in front
 
 # open a CEF format FGM file
 def fgmopen_cef(lines): # open FGM CEF file
