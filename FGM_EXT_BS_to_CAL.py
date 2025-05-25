@@ -650,7 +650,9 @@ change_indices = []
 
 name = craft + '_' + datadate
 
+# BUG: need to remove the timestamps also as part of the above process
 t = t_actual[0:len(x)]
+# BUG
 
 quickplot(name + ' Raw Timestamped','time [UTC]','count [#]')
 
