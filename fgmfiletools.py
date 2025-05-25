@@ -132,14 +132,17 @@ def fgmopen_dp(lines): # open a dp output file
     x = []
     y = []
     z = []
+    r = []
     # set the content flags; consider only two simple cases
     #  either with or without position data
-    rangeFlag = False # not possibile with fgmvec or igmvec
+    # rangeFlag = False # not possibile with fgmvec or igmvec
     num_columns = len(lines[0].split())
-    if num_columns == 4:
-        positionFlag = False
-    elif num_columns == 7:
-        positionFlag = True
+    if num_columns == 4: # no position data, no range (fgmvec or igmvec)
+        positionFlag, rangeFlag = False, False
+    elif num_columns == 7: # with position data, no range (igmvec)
+        positionFlag,rangeFlag = True, False
+    elif num_columns == 5: # range, no position, for ext2tvec (custom format)
+        positionFlag, rangeFlag = False, True
     else:
         print('Unexpected number of columns')
         return
@@ -164,6 +167,8 @@ def fgmopen_dp(lines): # open a dp output file
                 px.append(float(alist[4]))
                 py.append(float(alist[5]))
                 pz.append(float(alist[6]))
+            if rangeFlag:
+                r.append(float(alist[4]))
     # print results 
     records = len(t)
     print("Found %i records" % records)
@@ -176,7 +181,11 @@ def fgmopen_dp(lines): # open a dp output file
     x = array(x)
     y = array(y)
     z = array(z)
-    
+    if rangeFlag:
+        print("File contains range data")
+        r = array(r)    
+    else:
+        r = None
     if positionFlag:
         print("File contains position data")
         px = array(px)
@@ -190,7 +199,7 @@ def fgmopen_dp(lines): # open a dp output file
     DatasetDict = {'dataset_id': None, 'data_start': data_start,\
                 'data_end': data_end, 't': t, \
                     'Bx': x, 'By': y, 'Bz':z, 'Px': px, 'Py': py, 'Pz':pz,\
-                        'range': None, 'mode': None, 'positionFlag':positionFlag,\
+                        'range': r, 'mode': None, 'positionFlag':positionFlag,\
                             'rangeFlag':rangeFlag}
     return DatasetDict
 

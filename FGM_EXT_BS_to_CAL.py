@@ -727,7 +727,7 @@ print(timebase_duration)
 
 savename = filebase_cal + craft + '_' + start_time + '_' + end_time + '_calibrated.txt'
 
-fgmsave(savename,t,x,y,z)
+fgmsave(savename,t,x,y,z,r)
     
 
 #%%
@@ -763,10 +763,17 @@ f.close()
 # then reopen here and plot to check before continuing with the processing steps
 def finalcheck():
     # open the file
-    filename = filebase_cal + '/' + craft + '_' + start_time + '_' + end_time + '_calibrated.txt'
-    dataset = quickopen(filename)
-    
+    filename = craft + '_' + start_time + '_' + end_time + '_calibrated.txt'
+    dataset = fgmopen(filebase_cal + '/',filename)
+    global t, x, y, z, r, B
+    t = dataset['t']
+    x, y, z = dataset['Bx'], dataset['By'], dataset['Bz']
+    r = dataset['range']
+    B = np.sqrt(x**2 + y**2 + z**2)
     # plot the data
-    quickplot(craft + ' Final Check', 'time [UTC]', '[nT]')
+    quickplot(filename + ' Final Check', 'time [UTC]', '[nT]')
     
-    return t, x, y, z
+    return
+
+finalcheck() 
+# %%
