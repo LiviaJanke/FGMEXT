@@ -185,7 +185,7 @@ def quickplot(titletext,xlabeltext,ylabeltext):
 
 def make_t(ext_entry, t_spin, ext_exit, x):
     t = []
-    for i in range(0,x):
+    for i in range(1,x+1): # CC edit: changed to 1 to x+1 for compatibility with my code
         t.append(ext_entry + timedelta(seconds=i*t_spin))
     return t
 
@@ -557,12 +557,6 @@ sequential_data = pd.concat(series_decodes)
 
 sequential_data.reset_index(drop = True, inplace = True)
 
-# Make a basic timebase using spin duration and number of vectors
-
-timebase_length = int(len(sequential_data))
-
-t_actual = make_t(ext_entry, t_spin, ext_exit, timebase_length)
-
 
 bef_indices = sequential_data.loc[sequential_data['x'] == 'bef'].index.tolist()
 
@@ -606,6 +600,18 @@ for i in af_indices:
 # decoded and clean dataframe in sequential data 
 
 sequential_data.drop(labels = bef_indices, axis = 0, inplace = True)
+
+# Make a basic timebase using spin duration and number of vectors
+
+timebase_length = int(len(sequential_data))
+
+t_actual = make_t(ext_entry, t_spin, ext_exit, timebase_length)
+
+# CC test added times to DF
+sequential_data.insert(0,'timestamp',t_actual)
+# CC Test: the first row usuually not valid
+sequential_data.drop(sequential_data.index[0],inplace=True) 
+
 
 sequential_data.reset_index(drop = True, inplace = True)
 
@@ -651,8 +657,14 @@ change_indices = []
 name = craft + '_' + datadate
 
 # BUG: need to remove the timestamps also as part of the above process
-t = t_actual[0:len(x)]
-# BUG
+# t = t_actual[0:len(x)]
+# BUG: need to remove the timestamps also as part of the above process
+# CC test
+t = list(sequential_data['timestamp'])
+# CC test end
+
+
+
 
 quickplot(name + ' Raw Timestamped','time [UTC]','count [#]')
 
@@ -734,31 +746,27 @@ fgmsave(savename,t,x,y,z,r)
 
 #%%
 metadata_savename =  filebase_cal + '/' + craft + '_' + start_time + '_' + end_time + '_info.txt'
-
-
-# some more quality control and despiking and general evaluation stuff required
-
+print('Metadata file: ' + metadata_savename)
 
 f = open(metadata_savename, "w")
-f.write('export PATH=$PATH:/cluster/operations/software/dp/bin/:/cluster/operations/software/caa \n')
-f.write('export FGMPATH=$PATH:/cluster/operations/calibration/tubs_mirror/' + str(datadate[:4]) + '/' + str(datadate[4:6]) + ' \n')
 
-#f.write('export FGMPATH=/home/lme19/calibration \n')
-f.write('export SATTPATH=. \n')
-f.write('export ORBITPATH=. \n')
+# CC modifications follow
+# paths not needed as they are in my environment
+# f.write('export PATH=$PATH:/cluster/operations/software/dp/bin/:/cluster/operations/software/caa \n')
+# FGMPATH also in my environment, and points to /cluster/operations/calibration/default - TUBS mirror is not used / not correct
+# f.write('export FGMPATH=$PATH:/cluster/operations/calibration/tubs_mirror/' + str(datadate[:4]) + '/' + str(datadate[4:6]) + ' \n')
+# f.write('export FGMPATH=/home/lme19/calibration \n')
+# f.write('export SATTPATH=. \n')
+# f.write('export ORBITPATH=. \n')
 f.write('putsatt /cluster/data/raw/' + str(datadate[:4]) + '/' + str(datadate[4:6]) + '/' +str(craft) + '_' + str(datadate[2:]) + '_B.SATT \n')
 f.write('putsatt /cluster/data/raw/' + str(dumpdate[:4]) + '/' + str(dumpdate[4:6]) + '/' +str(craft) + '_' + str(dumpdate[2:]) + '_B.SATT \n')
+# works mostly, but ideally, should be next calendar day?
 f.write('putstof /cluster/data/raw/' + str(datadate[:4]) + '/' + str(datadate[4:6]) + '/' +str(craft) + '_' + str(datadate[2:]) + '_B.STOF \n')
 f.write('putstof /cluster/data/raw/' + str(dumpdate[:4]) + '/' + str(dumpdate[4:6]) + '/' +str(craft) + '_' + str(dumpdate[2:]) + '_B.STOF \n')
-
 
 f.write('./ext2tvec -i ' + str(craft) + '_EXT_Calibrated/' + str(craft) +  '_' + str(start_time) + '_' + str(end_time) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM_' + str(craft) + '_' + start_time + '_' + end_time + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V10.txt TIME_SPAN ' + str(start_time_iso) + '/' + str(end_time_iso) + ' version 01')
 
 f.close()
-        
-
-
-
 
 # %%
 # if necessary, edit the _calibrated.txt file, directly in the editor, to remove any residual spikes

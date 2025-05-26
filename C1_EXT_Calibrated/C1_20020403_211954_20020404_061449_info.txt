@@ -1,9 +1,0 @@
-export PATH=$PATH:/cluster/operations/software/dp/bin/:/cluster/operations/software/caa 
-export FGMPATH=$PATH:/cluster/operations/calibration/tubs_mirror/2002/04 
-export SATTPATH=. 
-export ORBITPATH=. 
-putsatt /cluster/data/raw/2002/04/C1_020403_B.SATT 
-putsatt /cluster/data/raw/2002/04/C1_020404_B.SATT 
-putstof /cluster/data/raw/2002/04/C1_020403_B.STOF 
-putstof /cluster/data/raw/2002/04/C1_020404_B.STOF 
-./ext2tvec -i C1_EXT_Calibrated/C1_20020403_211954_20020404_061449_calibrated.txt | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O C1_CP_FGM_EXTM_C1_20020403_211954_20020404_061449_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V10.txt TIME_SPAN 2002-04-03T21:19:54Z/2002-04-04T06:14:49Z version 01
