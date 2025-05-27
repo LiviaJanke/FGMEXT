@@ -739,12 +739,41 @@ print('Timebase Duration:')
 
 print(timebase_duration)
 
+#%%
+# save the calibrated data to a file
 savename = filebase_cal + craft + '_' + start_time + '_' + end_time + '_calibrated.txt'
 
 fgmsave(savename,t,x,y,z,r)
     
+# %%
+# if necessary, edit the _calibrated.txt file, directly in the editor, to remove any residual spikes
+# then reopen here and plot to check before continuing with the processing steps
+def finalcheck():
+    # open the file
+    filename = craft + '_' + start_time + '_' + end_time + '_calibrated.txt'
+    dataset = fgmopen(filebase_cal + '/',filename)
+    global t, x, y, z, r, B
+    t = dataset['t']
+    x, y, z = dataset['Bx'], dataset['By'], dataset['Bz']
+    r = dataset['range']
+    B = np.sqrt(x**2 + y**2 + z**2)
+    # plot the data
+    quickplot(filename + ' Final Check', 'time [UTC]', '[nT]')
+    
+    return
+
+finalcheck() 
 
 #%%
+# save the metadata file
+# note that end of interval needs to be rounded up to the nearest second
+def rounded_end_time(last_time):
+    last_time.replace(microsecond=0)
+    last_time += timedelta(seconds=1)
+    return last_time.strftime('%Y%m%d_%H%M%S')
+
+end_time = rounded_end_time(t[-1])
+
 metadata_savename =  filebase_cal + '/' + craft + '_' + start_time + '_' + end_time + '_info.txt'
 print('Metadata file: ' + metadata_savename)
 
@@ -768,22 +797,4 @@ f.write('./ext2tvec -i ' + str(craft) + '_EXT_Calibrated/' + str(craft) +  '_' +
 
 f.close()
 
-# %%
-# if necessary, edit the _calibrated.txt file, directly in the editor, to remove any residual spikes
-# then reopen here and plot to check before continuing with the processing steps
-def finalcheck():
-    # open the file
-    filename = craft + '_' + start_time + '_' + end_time + '_calibrated.txt'
-    dataset = fgmopen(filebase_cal + '/',filename)
-    global t, x, y, z, r, B
-    t = dataset['t']
-    x, y, z = dataset['Bx'], dataset['By'], dataset['Bz']
-    r = dataset['range']
-    B = np.sqrt(x**2 + y**2 + z**2)
-    # plot the data
-    quickplot(filename + ' Final Check', 'time [UTC]', '[nT]')
-    
-    return
-
-finalcheck() 
 # %%
