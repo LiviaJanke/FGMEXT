@@ -789,7 +789,7 @@ f.write('putstof /cluster/data/raw/' + str(dumpdate[:4]) + '/' + str(dumpdate[4:
 
 # f.write('./ext2tvec -i ' + str(craft) + '_EXT_Calibrated/' + str(craft) +  '_' + str(start_time) + '_' + str(end_time) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM_' + str(craft) + '_' + start_time + '_' + end_time + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V10.txt TIME_SPAN ' + str(start_time_iso) + '/' + str(end_time_iso) + ' version 01')
 # CC edited:
-f.write('ext2tvec -i ' + str(craft) + '_' + str(start_time) + '_' + str(end_time) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM__' + start_time + '_' + end_time + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V10.txt TIME_SPAN ' + str(start_time_iso) + '/' + str(end_time_iso) + ' version 01')
+f.write('ext2tvec -i ' + str(craft) + '_' + str(start_time) + '_' + str(end_time) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM__' + start_time + '_' + end_time + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V11.txt TIME_SPAN ' + str(start_time_iso) + '/' + str(end_time_iso) + ' version 01')
 
 f.close()
 

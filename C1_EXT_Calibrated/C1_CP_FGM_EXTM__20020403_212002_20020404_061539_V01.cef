@@ -21,14 +21,14 @@ END_META       =   FILE_TIME_SPAN
 !
 START_META     =   GENERATION_DATE
    VALUE_TYPE  =   ISO_TIME
-   ENTRY       =   2025-05-28T09:21:47Z
+   ENTRY       =   2025-05-28T10:58:01Z
 END_META       =   GENERATION_DATE
 !
 START_META     =   FILE_CAVEATS
    ENTRY       =   "Calibration parameters are derived and simplified from those that were originally estimated using the Fourier analysis method, solar wind analysis and the range jump correction method."
 END_META       =   FILE_CAVEATS
 !
-include = "C1_CH_FGM_SPIN.ceh"
+include = "C1_CH_FGM_EXTM.ceh"
 !
 DATA_UNTIL = EOF
 2002-04-03T21:20:02.035Z,2,-13.118,-30.768,-89.095,95.166,1723.9,-24199.9,-50161.8,3,22  $
