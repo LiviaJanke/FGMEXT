@@ -7,8 +7,17 @@ Created on Sun Jul 28 11:35:50 2024
 """
 #
 
-
-from fgmfilepaths import craft,entry_date,lib_path,calparams_filepath,BS_filepath,filebase_cal
+# from fgmfilepaths import craft,entry_date,lib_path,calparams_filepath,BS_filepath,filebase_cal
+# CC: I moved this back here as Python holds it in the cache and it was not being updated
+craft = 'C2'
+entry_date = '20020403'
+lib_path = 'Lib/'
+#lib_path = 'C:/Users/Test/Documents/FGM_Extended_Mode/Lib/'
+calparams_filepath = '/Volumes/SSD/Cluster/calibration/'
+#calparams_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/calibration'
+BS_filepath = '/Volumes/SSD/Cluster/BS/'
+# save location for output data
+filebase_cal = './' + craft + '_EXT_Calibrated/'
 
 print('Craft: ' + craft)
 print('Entry Date: ' + entry_date)
