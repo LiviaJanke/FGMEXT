@@ -715,34 +715,35 @@ quickplot(name + ' Calibrated','time [UTC]','[nT]')
 
 
 #%%
-start_time = t[0].strftime('%Y%m%d_%H%M%S')
+# timespan of the data
 
+print('First vector time:', t[0].isoformat())
+print('Last vector time:', t[-1].isoformat())
+print('Timebase Duration:',t[-1] - t[0])
+
+# note that the start of the interval needs to be  rounded DOWN to the nearest second
+# and the end of interval needs to be rounded UP 
+
+start_time = t[0].strftime('%Y%m%d_%H%M%S')
 start_time_iso = t[0].strftime('%Y-%m-%dT%H:%M:%SZ') 
 
+temp_t = t[-1].replace(microsecond=0) + timedelta(seconds=1) 
+end_time = temp_t.strftime('%Y%m%d_%H%M%S') 
+end_time_iso = temp_t.strftime('%Y-%m-%dT%H:%M:%SZ')
+
 print('Timebase Start:')
-
 print(start_time_iso)
-
 print('Timebase Stop:')
-        
-end_time = t[-1].strftime('%Y%m%d_%H%M%S')    
-
-# Isoformat: 2001-03-24T23:25:54.000Z
-
-end_time_iso = t[-1].strftime('%Y-%m-%dT%H:%M:%SZ')  
-
 print(end_time_iso)
+        
+# end_time = t[-1].strftime('%Y%m%d_%H%M%S')    
+# Isoformat: 2001-03-24T23:25:54.000Z
+# end_time_iso = t[-1].strftime('%Y-%m-%dT%H:%M:%SZ')  
 
-timebase_duration = t[-1] - t[0]
-
-print('Timebase Duration:')
-
-print(timebase_duration)
 
 #%%
 # save the calibrated data to a file
 savename = filebase_cal + craft + '_' + start_time + '_' + end_time + '_calibrated.txt'
-
 fgmsave(savename,t,x,y,z,r)
     
 # %%
@@ -766,13 +767,6 @@ finalcheck()
 
 #%%
 # save the metadata file
-# note that end of interval needs to be rounded up to the nearest second
-def rounded_end_time(last_time):
-    last_time.replace(microsecond=0)
-    last_time += timedelta(seconds=1)
-    return last_time.strftime('%Y%m%d_%H%M%S')
-
-end_time = rounded_end_time(t[-1])
 
 metadata_savename =  filebase_cal + '/' + craft + '_' + start_time + '_' + end_time + '_info.txt'
 print('Metadata file: ' + metadata_savename)
@@ -793,7 +787,9 @@ f.write('putsatt /cluster/data/raw/' + str(dumpdate[:4]) + '/' + str(dumpdate[4:
 f.write('putstof /cluster/data/raw/' + str(datadate[:4]) + '/' + str(datadate[4:6]) + '/' +str(craft) + '_' + str(datadate[2:]) + '_B.STOF \n')
 f.write('putstof /cluster/data/raw/' + str(dumpdate[:4]) + '/' + str(dumpdate[4:6]) + '/' +str(craft) + '_' + str(dumpdate[2:]) + '_B.STOF \n')
 
-f.write('./ext2tvec -i ' + str(craft) + '_EXT_Calibrated/' + str(craft) +  '_' + str(start_time) + '_' + str(end_time) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM_' + str(craft) + '_' + start_time + '_' + end_time + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V10.txt TIME_SPAN ' + str(start_time_iso) + '/' + str(end_time_iso) + ' version 01')
+# f.write('./ext2tvec -i ' + str(craft) + '_EXT_Calibrated/' + str(craft) +  '_' + str(start_time) + '_' + str(end_time) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM_' + str(craft) + '_' + start_time + '_' + end_time + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V10.txt TIME_SPAN ' + str(start_time_iso) + '/' + str(end_time_iso) + ' version 01')
+# CC edited:
+f.write('ext2tvec -i ' + str(craft) + '_' + str(start_time) + '_' + str(end_time) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM__' + start_time + '_' + end_time + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V10.txt TIME_SPAN ' + str(start_time_iso) + '/' + str(end_time_iso) + ' version 01')
 
 f.close()
 
