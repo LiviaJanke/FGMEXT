@@ -26,6 +26,7 @@ print('Entry Date: ' + entry_date)
 import numpy as np
 
 from fgmfiletools import fgmsave,fgmopen
+from fgmplottools import fgmplot
 
 import matplotlib.pyplot as plt
 
@@ -810,4 +811,22 @@ f.write('ext2tvec -i ' + str(craft) + '_' + str(start_time) + '_' + str(end_time
 
 f.close()
 
+# %%
+#%%
+# print a string to scp the file from alsvid to local folder
+def scp2local():
+    cefname = str(craft) + '_CP_FGM_EXTM__' + start_time + '_' + end_time + '_V01.cef'
+    scp_script = 'scp alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext/' + filebase_cal[2:] + cefname + ' ' + filebase_cal 
+    print(scp_script)
+    return
+
+scp2local()
+# %%
+def validation_plot():
+    cefname = str(craft) + '_CP_FGM_EXTM__' + start_time + '_' + end_time + '_V01.cef'
+    dataset = fgmopen(filebase_cal,cefname)
+    fgmplot(dataset)
+    return
+
+validation_plot()
 # %%
