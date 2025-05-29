@@ -838,6 +838,7 @@ def valplot():
     spin = fgmopen(filebase_cal, 'C3_CP_FGM_SPIN__20020403_175500_20020404_120500_V00.cef')
     fgmplot([dataset,spin])
     return
+
 valplot()
 
 # %%
