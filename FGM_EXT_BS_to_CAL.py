@@ -9,15 +9,16 @@ Created on Sun Jul 28 11:35:50 2024
 
 # from fgmfilepaths import craft,entry_date,lib_path,calparams_filepath,BS_filepath,filebase_cal
 # CC: I moved this back here as Python holds it in the cache and it was not being updated
-craft = 'C2'
+craft = 'C3'
 entry_date = '20020403'
-lib_path = 'Lib/'
+lib_path = './Lib/'
 #lib_path = 'C:/Users/Test/Documents/FGM_Extended_Mode/Lib/'
-calparams_filepath = '/Volumes/SSD/Cluster/calibration/'
+calparams_filepath = '/Volumes/cluster/calibration/'
 #calparams_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/calibration'
-BS_filepath = '/Volumes/SSD/Cluster/BS/'
+BS_filepath = '/Volumes/cluster/bs/'
 # save location for output data
-filebase_cal = './' + craft + '_EXT_Calibrated/'
+# filebase_cal = './' + craft + '_EXT_Calibrated/'
+filebase_cal = './' + entry_date + '/' 
 
 print('Craft: ' + craft)
 print('Entry Date: ' + entry_date)
@@ -369,13 +370,10 @@ duration = ext_exit - ext_entry
 
 expected_packet_num = duration/timedelta(minutes=20, seconds=23)
 
-print('EXT Entry Time')
-print(ext_entry)
-print('EXT Exit Time')
-print(ext_exit)
-print('EXT Duration')
-print(duration)
-#%%
+print('EXT Entry Time',ext_entry)
+print('EXT Exit Time',ext_exit)
+print('EXT Duration',duration)
+
 dumpdate = MSA_dump.strftime('%Y%m%d')
 
 datadate = ext_entry.strftime('%Y%m%d')
@@ -388,9 +386,15 @@ formatted_entry = ext_entry.strftime('%Y%m%d')
 
 formatted_exit = ext_exit.strftime('%Y%m%d')
 
+print('MSA Dump Time', MSA_dump)
+
+#%%
+# Find calibration file
 cal_filename = find_cal_file(craft, ext_entry, calparams_filepath)
 print('Calibration File \n',cal_filename)
 #%%
+# extract cal and find BS file
+
 cal_params = pd.read_csv(cal_filename, header = None, sep = ',|:', names = ['param', 'x', 'y', 'z'], on_bad_lines = 'skip', engine = 'python') 
 
 x_offsets = cal_params[cal_params['param'].str.strip() == 'Offsets (nT)']['x'].astype(float).values.tolist()
@@ -475,6 +479,7 @@ class packet():
 BS_filename = find_BS_file(dumpdate[2:], craft, BS_filepath)
 print('Burst Science file \n',BS_filename)
 #%%
+# process BS file
 file = open(BS_filename,"rb")
 
 del BS_filename, BS_filepath, calparams_filepath, cal_filename
@@ -579,7 +584,7 @@ plt.title('AF and BEF indices (missing ends, missing starts)')
 plt.legend()
 plt.show()
 #%%
-
+# extract EXT
 for i in af_indices:
         
     if i <  len(sequential_data['reset']) - 1 and sequential_data.loc[i+1, 'x'] == 'bef':
@@ -678,7 +683,6 @@ t = list(sequential_data['timestamp'])
 quickplot(name + ' Raw Timestamped','time [UTC]','count [#]')
 
 #%%
-
 # nominal scaling
 # nominal change from engineering units to nanotesla
 # using +/-64nT with 15 bits in range 2
@@ -689,8 +693,7 @@ z = z * (2*64/2**15) * 4**(r-2) * (np.pi/4)
 
 quickplot(name + ' Nominal Scaling','time [UTC]','[nT]')
 #%%
-
-# apply approximate cal using orbit cal see notes 30-Jan-24
+# apply approximate cal using orbit cal
 
 for i in range(0,len(t)):
     Ox = calparams['x_offsets'][r[i]-2]
@@ -720,10 +723,6 @@ quickplot(name + ' Calibrated','time [UTC]','[nT]')
 
 # quickplot(name +'_cleaned','time [UTC]','[nT]')
 
-
-
-
-#%%
 # timespan of the data
 
 print('First vector time:', t[0].isoformat())
@@ -773,6 +772,15 @@ def finalcheck():
     return
 
 finalcheck() 
+
+#%%
+# print a string to scp the file to alsvid
+def scp2alsvid():
+    scp_script = 'scp ' + filebase_cal + craft + '_' + start_time + '_' + end_time + '_calibrated.txt alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext' + '\n'
+    print(scp_script)
+    return
+
+scp2alsvid()
 
 #%%
 # save the metadata file
