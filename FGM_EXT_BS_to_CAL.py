@@ -822,11 +822,22 @@ def scp2local():
 
 scp2local()
 # %%
-def validation_plot():
+# plot the CEF file
+def checkplot():
     cefname = str(craft) + '_CP_FGM_EXTM__' + start_time + '_' + end_time + '_V01.cef'
     dataset = fgmopen(filebase_cal,cefname)
     fgmplot(dataset)
     return
 
-validation_plot()
+checkplot()
+# %%
+# optional - plot with other datasets for final validation
+def valplot():
+    cefname = str(craft) + '_CP_FGM_EXTM__' + start_time + '_' + end_time + '_V01.cef'
+    dataset = fgmopen(filebase_cal,cefname)
+    spin = fgmopen(filebase_cal, 'C3_CP_FGM_SPIN__20020403_175500_20020404_120500_V00.cef')
+    fgmplot([dataset,spin])
+    return
+valplot()
+
 # %%
