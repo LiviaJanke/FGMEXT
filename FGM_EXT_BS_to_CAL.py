@@ -239,10 +239,14 @@ def closest_higher_date(date_list, test_date):
 craft = 'C3'
 entry_date = '20020403'
 lib_path = './Lib/'
-#lib_path = 'C:/Users/Test/Documents/FGM_Extended_Mode/Lib/'
-calparams_filepath = '/Volumes/cluster/calibration/'
-#calparams_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/calibration'
-BS_filepath = '/Volumes/cluster/bs/'
+if os.environ.get('LOGNAME') == 'cmcarr':
+    calparams_filepath = '/Volumes/cluster/calibration/'
+    BS_filepath = '/Volumes/cluster/bs/'
+else:
+    calparams_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/calibration'
+    #lib_path = 'C:/Users/Test/Documents/FGM_Extended_Mode/Lib/'
+    BS_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/BS/'
+
 # save location for output data
 # filebase_cal = './' + craft + '_EXT_Calibrated/'
 filebase_cal = './' + entry_date + '/' 
