@@ -576,25 +576,18 @@ def extract_ext():
     sequential_data.drop(labels = range_change_indices, axis = 0, inplace = True)
 
     #change to array
-    resets = sequential_data['reset'].astype(float)
+    # resets = sequential_data['reset'].astype(float)
     r = np.array(sequential_data['resolution'].astype(int))
     x = np.array(sequential_data['x'].astype(float))
     y = np.array(sequential_data['y'].astype(float))
     z = np.array(sequential_data['z'].astype(float))
-
-
-    change_indices = []
-
-
-    
-
+    # change_indices = []
     # BUG: need to remove the timestamps also as part of the above process
     # t = t_actual[0:len(x)]
     # BUG: need to remove the timestamps also as part of the above process
     # CC test
     t = list(sequential_data['timestamp'])
     # CC test end
-
     return x,y,z,r
 
 x,y,z,r = extract_ext()
@@ -608,7 +601,6 @@ quickplot(name + ' Raw Timestamped','time [UTC]','count [#]')
 # nominal scaling
 # nominal change from engineering units to nanotesla
 # using +/-64nT with 15 bits in range 2
-
 x = x * (2*64/2**15) * 4**(r-2)
 y = y * (2*64/2**15) * 4**(r-2) * (np.pi/4)
 z = z * (2*64/2**15) * 4**(r-2) * (np.pi/4)
