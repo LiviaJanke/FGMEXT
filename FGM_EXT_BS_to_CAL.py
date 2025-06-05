@@ -588,9 +588,9 @@ def extract_ext():
     # CC test
     t = list(sequential_data['timestamp'])
     # CC test end
-    return x,y,z,r
+    return t,x,y,z,r
 
-x,y,z,r = extract_ext()
+t,x,y,z,r = extract_ext()
 
 #%%
 # plot the raw timestamped data
