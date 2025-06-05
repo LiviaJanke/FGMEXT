@@ -1,34 +1,22 @@
 #%% 
+# libraries
 # -*- coding: utf-8 -*-
 """
 Created on Sun Jul 28 11:35:50 2024
 
 @author: Livia
 """
-#
-
 # from fgmfilepaths import craft,entry_date,lib_path,calparams_filepath,BS_filepath,filebase_cal
 # CC: I moved this back here as Python holds it in the cache and it was not being updated
-craft = 'C3'
-entry_date = '20020403'
-lib_path = './Lib/'
-#lib_path = 'C:/Users/Test/Documents/FGM_Extended_Mode/Lib/'
-calparams_filepath = '/Volumes/cluster/calibration/'
-#calparams_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/calibration'
-BS_filepath = '/Volumes/cluster/bs/'
-# save location for output data
-# filebase_cal = './' + craft + '_EXT_Calibrated/'
-filebase_cal = './' + entry_date + '/' 
-
-print('Craft: ' + craft)
-print('Entry Date: ' + entry_date)
-
 import numpy as np
 
 from fgmfiletools import fgmsave,fgmopen
 from fgmplottools import fgmplot
 
 import matplotlib.pyplot as plt
+plt.rcParams['lines.linewidth'] = 1
+#plt.rcParams['lines.marker'] = '.'
+#plt.rcParams['lines.markersize'] = 1
 
 import pandas as pd
 
@@ -39,23 +27,19 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 
 from functions import quicksave,quickopen
-
+#%%
 # defining functions
-
 #s16 changes unsigned 16 bit hex numbers to signed (positive and negative)
-
 def s16(val):
     
     value = int(val)
     
     return -(value & 0x8000) | (value & 0x7fff)
 
-
 # decodes the given packet as if it were 'even'
 # characters 0 to 67 of the payload are the CDDS header (34 bytes)
 # Only want to decode the data itself, so discarding the header 
 # variable 'packig' contains the 7112 characters (3556 bytes) i
-
 def packet_decoding_even(ext_bytes):
     
     packig = ext_bytes[68:7180]
@@ -125,7 +109,6 @@ def packet_decoding_even(ext_bytes):
          
     return df_p
 
-
 def packet_decoding_odd(ext_bytes):
     
     packig = ext_bytes[76:7180]
@@ -176,11 +159,6 @@ def packet_decoding_odd(ext_bytes):
          
     return df_p
 
-
-plt.rcParams['lines.linewidth'] = 1
-#plt.rcParams['lines.marker'] = '.'
-#plt.rcParams['lines.markersize'] = 1
-
 def quickplot(titletext,xlabeltext,ylabeltext):
     plt.subplots(5,1,sharex=True,height_ratios=[2,2,2,2,1])
     plt.subplot(5,1,1);plt.plot(t,x,label='x');plt.grid();plt.legend();plt.ylabel(ylabeltext)
@@ -199,8 +177,6 @@ def make_t(ext_entry, t_spin, ext_exit, x):
     for i in range(1,x+1): # CC edit: changed to 1 to x+1 for compatibility with my code
         t.append(ext_entry + timedelta(seconds=i*t_spin))
     return t
-
-
 
 def find_cal_file(craft,entry,path):
     
@@ -229,7 +205,6 @@ def find_cal_file(craft,entry,path):
         print('No matching calibration file found for craft:', craft, 'between', entry, 'and', exit)
         return None
         
-
 def find_BS_file(date, craft, path):
 
     pattern_B = craft + '_' + date + '_B.BS'
@@ -249,8 +224,7 @@ def find_BS_file(date, craft, path):
                 return(os.path.join(root, name))
                 
             elif fnmatch.fnmatch(name, pattern_A):
-                return(os.path.join(root, name))
-            
+                return(os.path.join(root, name))    
 
 def closest_higher_date(date_list, test_date):
     sorted_list = sorted(date_list)
@@ -260,8 +234,23 @@ def closest_higher_date(date_list, test_date):
 
     return sorted_list[-1]
 
+#%%
 # Defining constant variables, lists etc...
+craft = 'C3'
+entry_date = '20020403'
+lib_path = './Lib/'
+#lib_path = 'C:/Users/Test/Documents/FGM_Extended_Mode/Lib/'
+calparams_filepath = '/Volumes/cluster/calibration/'
+#calparams_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/calibration'
+BS_filepath = '/Volumes/cluster/bs/'
+# save location for output data
+# filebase_cal = './' + craft + '_EXT_Calibrated/'
+filebase_cal = './' + entry_date + '/' 
+print('Craft: ' + craft)
+print('Entry Date: ' + entry_date)
 
+#%%
+# Find EXT entry/exit/dump times
 validphid=(0x1F,0x47,0x6F,0x97,0x26,0x4E,0x76,0x9E,0x2D,0x55,0x7D,0xA5)
 sciphid=(0x1F,0x47,0x6F,0x97,0x26,0x4E,0x76,0x9E)
 fgmhkphid=(0x2D,0x55,0x7D,0xA5)
@@ -285,8 +274,6 @@ MSA_dumps_df = pd.read_csv(lib_path + craft + '_MSA_Dump_times', header = None)
 MSA_dumps = pd.to_datetime(MSA_dumps_df[0])
 
 del MSA_dumps_df
-
-
 
 these_entries = []
 
