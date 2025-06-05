@@ -426,114 +426,101 @@ def extract_cal():
 
 calparams = extract_cal()
         
-
+#%%        
+# Find BS file
 BS_filename = find_BS_file(dumpdate[2:], craft, BS_filepath)
 print('Burst Science file \n',BS_filename)
+
 #%%
 # process BS file
-file = open(BS_filename,"rb")
+def process_bs_file():
+    file = open(BS_filename,"rb")
+    # del BS_filename, BS_filepath, calparams_filepath, cal_filename
 
-del BS_filename, BS_filepath, calparams_filepath, cal_filename
+    # this is the entire BS file retrieved on the dump date, including Burst Science data 
+    # D Burst Science packets have size 2232
+    # Normal Science and Data Dump (aka Extended Mode ?) both have size 3596
 
-# this is the entire BS file retrieved on the dump date, including Burst Science data 
-# D Burst Science packets have size 2232
-# Normal Science and Data Dump (aka Extended Mode ?) both have size 3596
+    data=bytearray(file.read())
+    file.close()
+    datalen=len(data)    
 
-data=bytearray(file.read())
-file.close()
-datalen=len(data)    
+    packets=[]
+    offset=0
+    while True:
+        packets.append(packet(data[offset:]))
+        offset+=15+len(packets[-1].payload)
+        if packets[-1].size != 3596 or packets[-1].status != 15:
+            packets=packets[:-1]
+        if offset>=datalen:
+            break
+            
+    ext_resets = [i.reset for i in packets]
+    ext_nums = [i.pktcnt for i in packets]
+    valid_ext_packets = [i for i in packets if len(i.valid_decode) > 100]
 
-packets=[]
+    if len(valid_ext_packets) == 0:
+        raise Exception("No Valid Packets")
 
-offset=0
+    valid_ext_resets = [i.reset for i in valid_ext_packets]
+    valid_nums = [i.pktcnt for i in valid_ext_packets]
+    scets = [i.scet for i in packets]
+    valid_scets = [i.scet for i in valid_ext_packets]
 
-while True:
-    packets.append(packet(data[offset:]))
-    offset+=15+len(packets[-1].payload)
-    if packets[-1].size != 3596 or packets[-1].status != 15:
-        packets=packets[:-1]
-    if offset>=datalen:
-        break
-        
-ext_resets = [i.reset for i in packets]
+    # del data, datalen, packets
 
-ext_nums = [i.pktcnt for i in packets]
+    plt.plot(ext_nums, ext_resets, label = 'all', markersize = 1)
+    plt.plot(valid_nums, valid_ext_resets, label = 'valid', marker = 'x', markersize = 1)
+    plt.title('Packet Resets')
+    plt.legend()
+    plt.show()
 
-valid_ext_packets = [i for i in packets if len(i.valid_decode) > 100]
+    plt.plot(scets, ext_nums,  label = 'all')
+    plt.plot(valid_scets, valid_nums,  label = 'valid')
+    plt.title('Packet SCETs')
+    plt.legend()
+    plt.show()
 
-if len(valid_ext_packets) == 0:
-    raise Exception("No Valid Packets")
+    reset_counter = 1
+    resets = []
+    packet_series = []
 
-valid_ext_resets = [i.reset for i in valid_ext_packets]
+    while True:
+        resets.append(valid_ext_resets[reset_counter - 1])
+        packet_series.append(valid_ext_packets[reset_counter - 1])
+        reset_diff = np.abs(valid_ext_resets[reset_counter - 1] - valid_ext_resets[reset_counter])
+        reset_counter +=1
+        if reset_diff > 2: 
+            break
+        elif len(resets) == len(valid_ext_resets) - 1:
+            break 
 
-valid_nums = [i.pktcnt for i in valid_ext_packets]
+    series_decodes = [i.valid_decode for i in packet_series]
 
-scets = [i.scet for i in packets]
+    # next_series_start_reset = valid_ext_resets[reset_counter]
 
-valid_scets = [i.scet for i in valid_ext_packets]
+    # Can use incrementing set of scets etc
+    # and next series start reset 
+    # to develop second series
+    # find the indices missing from sequential data here and use them to remove the corresponsing t values
 
-del data, datalen, packets
-
-plt.plot(ext_nums, ext_resets, label = 'all', markersize = 1)
-plt.plot(valid_nums, valid_ext_resets, label = 'valid', marker = 'x', markersize = 1)
-plt.title('Packet Resets')
-plt.legend()
-plt.show()
-
-
-plt.plot(scets, ext_nums,  label = 'all')
-plt.plot(valid_scets, valid_nums,  label = 'valid')
-plt.title('Packet SCETs')
-plt.legend()
-plt.show()
-#%%
-# Use SCETS to look at multiple dataset case
-
-reset_counter = 1
-
-resets = []
-
-packet_series = []
-
-while True:
-    resets.append(valid_ext_resets[reset_counter - 1])
-    packet_series.append(valid_ext_packets[reset_counter - 1])
-    reset_diff = np.abs(valid_ext_resets[reset_counter - 1] - valid_ext_resets[reset_counter])
-
-    reset_counter +=1
-    if reset_diff > 2: 
-        break
-    elif len(resets) == len(valid_ext_resets) - 1:
-        break 
-
-series_decodes = [i.valid_decode for i in packet_series]
-
-next_series_start_reset = valid_ext_resets[reset_counter]
-
-# Can use incrementing set of scets etc
-
-# and next series start reset 
-
-# to develop second series
-
-# find the indices missing from sequential data here and use them to remove the corresponsing t values
-
-sequential_data = pd.concat(series_decodes)
-
-sequential_data.reset_index(drop = True, inplace = True)
+    sequential_data = pd.concat(series_decodes)
+    sequential_data.reset_index(drop = True, inplace = True)
 
 
-bef_indices = sequential_data.loc[sequential_data['x'] == 'bef'].index.tolist()
+    bef_indices = sequential_data.loc[sequential_data['x'] == 'bef'].index.tolist()
+    af_indices = sequential_data.loc[sequential_data['z'] == 'af'].index.tolist()
 
-af_indices = sequential_data.loc[sequential_data['z'] == 'af'].index.tolist()
+    plt.plot(bef_indices, label = 'bef', marker = 'x')
+    plt.plot(af_indices, label = 'af')
+    plt.title('AF and BEF indices (missing ends, missing starts)')
+    plt.legend()
+    plt.show()
 
-plt.plot(bef_indices, label = 'bef', marker = 'x')
+    return sequential_data, bef_indices, af_indices
 
-plt.plot(af_indices, label = 'af')
+sequential_data, bef_indices, af_indices = process_bs_file()
 
-plt.title('AF and BEF indices (missing ends, missing starts)')
-plt.legend()
-plt.show()
 #%%
 # extract EXT
 for i in af_indices:
