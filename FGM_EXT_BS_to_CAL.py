@@ -233,6 +233,51 @@ def closest_higher_date(date_list, test_date):
             return date
 
     return sorted_list[-1]
+class packet():
+    counter=0
+    # .cdds is the CDDS packet header bytes (15)
+    # .size is the packet size from that CDDS header
+    # .payload are the bytes of the payload packet, so everything that isn't the CDDS header
+    # .reset is the packet reset count, from the appropriate part of the FGM header
+    # .micros are the total microseconds from a combination of the days, milliseconds and microseconds
+    # .scet is the time, in Python format, from the .micros
+    # .pktcnt is a one-up count of each packet (ie order by presence in file)
+    # .status is the status word
+    # counter is a count of all the packets ever initialised
+
+    def __init__(self,d):
+        self.cdds=d[0:15]
+        self.size=int.from_bytes(d[9:12],"big")
+        self.payload=d[15:15+self.size]
+        self.status = d[16]
+        sciphid=(0x1F,0x47,0x6F,0x97,0x26,0x4E,0x76,0x9E) # moved here (CC)
+        fgmhkphid=(0x2D,0x55,0x7D,0xA5)
+        if self.cdds[8] in sciphid:
+            self.reset=int.from_bytes(self.payload[12:14],"big")
+        elif self.cdds[8] in fgmhkphid:
+            self.reset=(int.from_bytes(self.payload[8:10],"big")+65537)%65536
+        else:
+            self.reset=-1
+        self.micros= int.from_bytes(self.cdds[0:2],"big")*86400*1000000+int.from_bytes(self.cdds[2:6],"big")*1000+int.from_bytes(self.cdds[6:8],"big")
+        self.scet=timedelta(microseconds=self.micros)+datetime(1958,1,1)
+        
+        self.pktcnt=packet.counter
+        packet.counter+=1
+        
+        if self.status == 15 and self.size == 3596:
+            self.odd_decode = packet_decoding_odd(self.payload.hex())
+            self.even_decode = packet_decoding_even(self.payload.hex())
+            ecount, eunique, etop, efreq =  self.even_decode['reset_hex'].describe()
+            ocount, ounique, otop, ofreq = self.odd_decode['reset_hex'].describe()
+            if eunique < 30:
+                self.valid_decode = packet_decoding_even(self.payload.hex())
+            elif ounique < 30:
+                self.valid_decode = packet_decoding_odd(self.payload.hex())
+            else:
+                self.valid_decode = str('No_valid_decode')
+    
+    def __str__(self):
+        return("{:7s}".format("#"+str(self.pktcnt))+" | "+" ".join('{:02X}'.format(n) for n in self.cdds)+" | "+" ".join('{:02X}'.format(n) for n in self.payload[0:30]))
 
 #%%
 # Defining constant variables, lists etc...
@@ -381,54 +426,6 @@ def extract_cal():
 
 calparams = extract_cal()
         
-class packet():
-
-    counter=0
-
-    # .cdds is the CDDS packet header bytes (15)
-    # .size is the packet size from that CDDS header
-    # .payload are the bytes of the payload packet, so everything that isn't the CDDS header
-    # .reset is the packet reset count, from the appropriate part of the FGM header
-    # .micros are the total microseconds from a combination of the days, milliseconds and microseconds
-    # .scet is the time, in Python format, from the .micros
-    # .pktcnt is a one-up count of each packet (ie order by presence in file)
-    # .status is the status word
-    # counter is a count of all the packets ever initialised
-    
-
-    def __init__(self,d):
-        self.cdds=d[0:15]
-        self.size=int.from_bytes(d[9:12],"big")
-        self.payload=d[15:15+self.size]
-        self.status = d[16]
-        sciphid=(0x1F,0x47,0x6F,0x97,0x26,0x4E,0x76,0x9E) # moved here (CC)
-        fgmhkphid=(0x2D,0x55,0x7D,0xA5)
-        if self.cdds[8] in sciphid:
-            self.reset=int.from_bytes(self.payload[12:14],"big")
-        elif self.cdds[8] in fgmhkphid:
-            self.reset=(int.from_bytes(self.payload[8:10],"big")+65537)%65536
-        else:
-            self.reset=-1
-        self.micros= int.from_bytes(self.cdds[0:2],"big")*86400*1000000+int.from_bytes(self.cdds[2:6],"big")*1000+int.from_bytes(self.cdds[6:8],"big")
-        self.scet=timedelta(microseconds=self.micros)+datetime(1958,1,1)
-        
-        self.pktcnt=packet.counter
-        packet.counter+=1
-        
-        if self.status == 15 and self.size == 3596:
-            self.odd_decode = packet_decoding_odd(self.payload.hex())
-            self.even_decode = packet_decoding_even(self.payload.hex())
-            ecount, eunique, etop, efreq =  self.even_decode['reset_hex'].describe()
-            ocount, ounique, otop, ofreq = self.odd_decode['reset_hex'].describe()
-            if eunique < 30:
-                self.valid_decode = packet_decoding_even(self.payload.hex())
-            elif ounique < 30:
-                self.valid_decode = packet_decoding_odd(self.payload.hex())
-            else:
-                self.valid_decode = str('No_valid_decode')
-    
-    def __str__(self):
-        return("{:7s}".format("#"+str(self.pktcnt))+" | "+" ".join('{:02X}'.format(n) for n in self.cdds)+" | "+" ".join('{:02X}'.format(n) for n in self.payload[0:30]))
 
 BS_filename = find_BS_file(dumpdate[2:], craft, BS_filepath)
 print('Burst Science file \n',BS_filename)
