@@ -608,14 +608,17 @@ z = z * (2*64/2**15) * 4**(r-2) * (np.pi/4)
 quickplot(name + ' Nominal Scaling','time [UTC]','[nT]')
 #%%
 # apply approximate cal using orbit cal
+def apply_cal():
+    for i in range(0,len(t)):
+        Ox = calparams['x_offsets'][r[i]-2]
+        Gx = calparams['x_gains'][r[i]-2]
+        Gyz = calparams['yz_gains'][r[i]-2]
+        x[i] = (x[i] - Ox) / Gx
+        y[i] = y[i] / Gyz
+        z[i] = z[i] / Gyz
+    return x,y,z
 
-for i in range(0,len(t)):
-    Ox = calparams['x_offsets'][r[i]-2]
-    Gx = calparams['x_gains'][r[i]-2]
-    Gyz = calparams['yz_gains'][r[i]-2]
-    x[i] = (x[i] - Ox) / Gx
-    y[i] = y[i] / Gyz
-    z[i] = z[i] / Gyz
+x,y,z = apply_cal()
     
 quickplot(name + ' Calibrated','time [UTC]','[nT]')
 
