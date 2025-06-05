@@ -257,127 +257,93 @@ print('Entry Date: ' + entry_date)
 # Find EXT entry/exit/dump times
 # validphid=(0x1F,0x47,0x6F,0x97,0x26,0x4E,0x76,0x9E,0x2D,0x55,0x7D,0xA5) # not used? (CC)
 
+def find_times():
+    starts_stops_spins_df = pd.read_csv(lib_path + craft + '_SATT_start_stop_spins',names = ['Starts', 'Stops', 'Spins'])
+    ext_entries_df = pd.read_csv(lib_path + craft + '_Ext_Entries', header = None)
+    ext_entries = pd.to_datetime(ext_entries_df[0])
+    ext_exits_df = pd.read_csv(lib_path + craft + '_Ext_Exits', header = None)
+    ext_exits = pd.to_datetime(ext_exits_df[0])
+    MSA_dumps_df = pd.read_csv(lib_path + craft + '_MSA_Dump_times', header = None)
+    MSA_dumps = pd.to_datetime(MSA_dumps_df[0])
 
-starts_stops_spins_df = pd.read_csv(lib_path + craft + '_SATT_start_stop_spins',names = ['Starts', 'Stops', 'Spins'])
+    these_entries = []
+    for i in ext_entries:
+        if str(i.strftime('%Y%m%d')) == entry_date:
+            these_entries.append(np.where(ext_entries == i)[0])
+            
+    ext_entry_index = these_entries[0][0]
+    ext_entry = ext_entries[ext_entry_index]
+    next_ext_entry = ext_entries[ext_entry_index + 1]
 
-ext_entries_df = pd.read_csv(lib_path + craft + '_Ext_Entries', header = None)
+    if ext_entry_index >=1:
+        prev_ext_entry = ext_entries[ext_entry_index - 1]
+        prev_ext_exit = closest_higher_date(ext_exits, prev_ext_entry)
+        prev_MSA_dump =  closest_higher_date(MSA_dumps, prev_ext_exit)
 
-ext_entries = pd.to_datetime(ext_entries_df[0])
+    ext_exit = closest_higher_date(ext_exits, ext_entry)
+    next_ext_exit = closest_higher_date(ext_exits, next_ext_entry)
 
-del ext_entries_df
+    MSA_dump = closest_higher_date(MSA_dumps, ext_exit)
+    next_MSA_dump =  closest_higher_date(MSA_dumps, next_ext_exit)
 
-ext_exits_df = pd.read_csv(lib_path + craft + '_Ext_Exits', header = None)
+    duration = ext_exit - ext_entry
 
-ext_exits = pd.to_datetime(ext_exits_df[0])
+    # expected_packet_num = duration/timedelta(minutes=20, seconds=23)
 
-del ext_exits_df
+    if ext_exit > next_ext_entry:            
+        raise Exception("Unmatched Entry")
 
-MSA_dumps_df = pd.read_csv(lib_path + craft + '_MSA_Dump_times', header = None)
+    if MSA_dump > next_ext_exit:
+        raise Exception("No Dump")
+        # this covers the whole late and early half thing no?
+        # If dump time is greater than next exit, then 'no dump' is raised
+            
+    if duration <= timedelta(seconds = 0):
+        raise Exception("Negatve/Zero Duration")
+            
+    # late_half = False
+    # early_half = False
 
-MSA_dumps = pd.to_datetime(MSA_dumps_df[0])
-
-del MSA_dumps_df
-
-these_entries = []
-
-for i in ext_entries:
-    
-    if str(i.strftime('%Y%m%d')) == entry_date:
+    if MSA_dump.strftime('%Y%m%d') == next_MSA_dump.strftime('%Y%m%d'):
+        # early_half = True
+        print('Dump Contains two EXT periods - this is the first')
+            
+    if MSA_dump.strftime('%Y%m%d') == prev_MSA_dump.strftime('%Y%m%d'):
+        # late_half = True
+        print('Dump Contains two EXT periods - this is the second')
         
-        these_entries.append(np.where(ext_entries == i)[0])
-        
+    closest_start = np.min(abs(pd.to_datetime(starts_stops_spins_df['Starts']) - ext_entry))
+    closest_stop = np.min(abs(pd.to_datetime(starts_stops_spins_df['Stops']) - ext_exit))
 
-    
-ext_entry_index = these_entries[0][0]
+    if closest_start < closest_stop:
+        SATT_index = list(abs(pd.to_datetime(starts_stops_spins_df['Starts']) - ext_entry)).index(closest_start)
+            
+    if closest_start >= closest_stop:
+        SATT_index = list(abs(pd.to_datetime(starts_stops_spins_df['Stops']) - ext_exit)).index(closest_stop)
 
-ext_entry = ext_entries[ext_entry_index]
+    t_spin = 60 / starts_stops_spins_df['Spins'].iloc[SATT_index]
 
+    # duration = ext_exit - ext_entry
 
-next_ext_entry = ext_entries[ext_entry_index + 1]
+    # expected_packet_num = duration/timedelta(minutes=20, seconds=23)
 
-if ext_entry_index >=1:
-    prev_ext_entry = ext_entries[ext_entry_index - 1]
-    prev_ext_exit = closest_higher_date(ext_exits, prev_ext_entry)
-    prev_MSA_dump =  closest_higher_date(MSA_dumps, prev_ext_exit)
+    print('EXT Entry Time',ext_entry)
+    print('EXT Exit Time',ext_exit)
+    print('EXT Duration',duration)
 
-ext_exit = closest_higher_date(ext_exits, ext_entry)
+    dumpdate = MSA_dump.strftime('%Y%m%d')
+    datadate = ext_entry.strftime('%Y%m%d')
 
-next_ext_exit = closest_higher_date(ext_exits, next_ext_entry)
+    # year = ext_entry.strftime('%y')
+    # month = ext_entry.strftime('%m')
+    # formatted_entry = ext_entry.strftime('%Y%m%d')=
+    # formatted_exit = ext_exit.strftime('%Y%m%d')
 
+    print('MSA Dump Time', MSA_dump)
 
-MSA_dump = closest_higher_date(MSA_dumps, ext_exit)
+    return ext_entry, ext_exit, dumpdate, datadate, t_spin
 
-next_MSA_dump =  closest_higher_date(MSA_dumps, next_ext_exit)
-
-duration = ext_exit - ext_entry
-
-expected_packet_num = duration/timedelta(minutes=20, seconds=23)
-
-
-if ext_exit > next_ext_entry:
-        
-     raise Exception("Unmatched Entry")
-
-if MSA_dump > next_ext_exit:
-        
-    raise Exception("No Dump")
-    # this covers the whole late and early half thing no?
-    # If dump time is greater than next exit, then 'no dump' is raised
-        
-if duration <= timedelta(seconds = 0):
-        
-    raise Exception("Negatve/Zero Duration")
-        
-late_half = False
-early_half = False
-
-if MSA_dump.strftime('%Y%m%d') == next_MSA_dump.strftime('%Y%m%d'):
-    early_half = True
-    print('Dump Contains two EXT periods - this is the first')
-        
-
-if MSA_dump.strftime('%Y%m%d') == prev_MSA_dump.strftime('%Y%m%d'):
-    late_half = True
-    print('Dump Contains two EXT periods - this is the second')
-    
-closest_start = np.min(abs(pd.to_datetime(starts_stops_spins_df['Starts']) - ext_entry))
-
-closest_stop = np.min(abs(pd.to_datetime(starts_stops_spins_df['Stops']) - ext_exit))
-
-if closest_start < closest_stop:
-        
-    SATT_index = list(abs(pd.to_datetime(starts_stops_spins_df['Starts']) - ext_entry)).index(closest_start)
-        
-if closest_start >= closest_stop:
-        
-    SATT_index = list(abs(pd.to_datetime(starts_stops_spins_df['Stops']) - ext_exit)).index(closest_stop)
-
-t_spin = 60 / starts_stops_spins_df['Spins'].iloc[SATT_index]
-
-
-del closest_start, closest_stop, starts_stops_spins_df, SATT_index
-
-duration = ext_exit - ext_entry
-
-expected_packet_num = duration/timedelta(minutes=20, seconds=23)
-
-print('EXT Entry Time',ext_entry)
-print('EXT Exit Time',ext_exit)
-print('EXT Duration',duration)
-
-dumpdate = MSA_dump.strftime('%Y%m%d')
-
-datadate = ext_entry.strftime('%Y%m%d')
-
-year = ext_entry.strftime('%y')
-
-month = ext_entry.strftime('%m')
-
-formatted_entry = ext_entry.strftime('%Y%m%d')
-
-formatted_exit = ext_exit.strftime('%Y%m%d')
-
-print('MSA Dump Time', MSA_dump)
+ext_entry, ext_exit, dumpdate, datadate, t_spin = find_times()
 
 #%%
 # Find calibration file
