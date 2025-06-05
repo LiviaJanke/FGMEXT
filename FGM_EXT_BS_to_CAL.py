@@ -619,26 +619,8 @@ def apply_cal():
     return x,y,z
 
 x,y,z = apply_cal()
-    
+
 quickplot(name + ' Calibrated','time [UTC]','[nT]')
-
-# Eliminating anomalous data points (more than 3 standard deviations beyond the mean)
-
-# x_outlier_indices = np.where(np.abs(x - np.mean(x)) > (np.std(x) * 3))[0]
-# y_outlier_indices = np.where(np.abs(y - np.mean(y)) > (np.std(y) * 3))[0]
-# z_outlier_indices = np.where(np.abs(z - np.mean(z)) > (np.std(z) * 3))[0]
-
-# outlier_indices = np.hstack((x_outlier_indices, y_outlier_indices, z_outlier_indices))
-
-# ordered_outliers = np.sort(outlier_indices)
-
-# x = np.delete(x, ordered_outliers)
-# y = np.delete(y, ordered_outliers)
-# z = np.delete(z, ordered_outliers)
-# t = np.delete(t, ordered_outliers)
-# r = np.delete(r, ordered_outliers)
-
-# quickplot(name +'_cleaned','time [UTC]','[nT]')
 
 # timespan of the data
 
