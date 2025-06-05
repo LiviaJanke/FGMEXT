@@ -523,101 +523,85 @@ sequential_data, bef_indices, af_indices = process_bs_file()
 
 #%%
 # extract EXT
-for i in af_indices:
+def extract_ext():
+    for i in af_indices:
+        if i <  len(sequential_data['reset']) - 1 and sequential_data.loc[i+1, 'x'] == 'bef':
+            sequential_data.loc[i,'reset'] = sequential_data.loc[i+1, 'reset']
+            sequential_data.loc[i,'reset_hex'] = sequential_data.loc[i+1, 'reset_hex']
+            sequential_data.loc[i,'resolution'] = sequential_data.loc[i+1, 'resolution']
+            sequential_data.loc[i,'z'] = sequential_data.loc[i+1,'z']
         
-    if i <  len(sequential_data['reset']) - 1 and sequential_data.loc[i+1, 'x'] == 'bef':
+        elif i <  len(sequential_data['reset']) - 2 and sequential_data.loc[i+2, 'x'] == 'bef':
+            sequential_data.loc[i,'reset'] = sequential_data.loc[i+2, 'reset']
+            sequential_data.loc[i,'reset_hex'] = sequential_data.loc[i+2, 'reset_hex']
+            sequential_data.loc[i,'resolution'] = sequential_data.loc[i+2, 'resolution']
+            sequential_data.loc[i,'z'] = sequential_data.loc[i+2,'z']        
         
-        sequential_data.loc[i,'reset'] = sequential_data.loc[i+1, 'reset']
-            
-        sequential_data.loc[i,'reset_hex'] = sequential_data.loc[i+1, 'reset_hex']
-        
-        sequential_data.loc[i,'resolution'] = sequential_data.loc[i+1, 'resolution']
-        
-        sequential_data.loc[i,'z'] = sequential_data.loc[i+1,'z']
+        else:
+            bef_indices.append(i)
+                
+    # decoded and clean dataframe in sequential data 
+    sequential_data.drop(labels = bef_indices, axis = 0, inplace = True)
+    # Make a basic timebase using spin duration and number of vectors
+    timebase_length = int(len(sequential_data))
+    # make timeline
+    t_actual = make_t(ext_entry, t_spin, ext_exit, timebase_length)
+    # CC test added times to DF
+    sequential_data.insert(0,'timestamp',t_actual)
+    # CC Test: the first row usuually not valid
+    sequential_data.drop(sequential_data.index[0],inplace=True) 
+    sequential_data.reset_index(drop = True, inplace = True)
+
+    # change to range array
+    ra = np.array(sequential_data['resolution'].astype(int))
+
+    #remove the vectors at which a range change occurs
+    range_change_index = [i+1 if (ra[i+1] - ra[i]) != 0 else i-i for i in np.arange(0,len(ra)-1)]
+                    
+    #finding the index of the first vector after a range change
+    #rci is an acronym for range change indices
+
+    rci  = list(filter(lambda num: num != 0, range_change_index))
+
+    #and the indices of the next 3 
+    rci_h1 = [i+1 for i in rci]
+    rci_h2 = [i+1 for i in rci]
+    rci_h3 = [i+1 for i in rci]
+    rci_h4 = [i+1 for i in rci]
+    rci_h5 = [i+1 for i in rci]
+    rci_h6 = [i+1 for i in rci]
+    rci_h7 = [i+1 for i in rci]
+
+    range_change_indices = rci + rci_h1 + rci_h2 +rci_h3 + rci_h4 + rci_h5 + rci_h6 + rci_h7
+    sequential_data.drop(labels = range_change_indices, axis = 0, inplace = True)
+
+    #change to array
+    resets = sequential_data['reset'].astype(float)
+    r = np.array(sequential_data['resolution'].astype(int))
+    x = np.array(sequential_data['x'].astype(float))
+    y = np.array(sequential_data['y'].astype(float))
+    z = np.array(sequential_data['z'].astype(float))
+
+
+    change_indices = []
+
+
     
-    elif i <  len(sequential_data['reset']) - 2 and sequential_data.loc[i+2, 'x'] == 'bef':
 
-        sequential_data.loc[i,'reset'] = sequential_data.loc[i+2, 'reset']
-            
-        sequential_data.loc[i,'reset_hex'] = sequential_data.loc[i+2, 'reset_hex']
-        
-        sequential_data.loc[i,'resolution'] = sequential_data.loc[i+2, 'resolution']
-        
-        sequential_data.loc[i,'z'] = sequential_data.loc[i+2,'z']        
-    
-    else:
-            
-        bef_indices.append(i)
-            
-# decoded and clean dataframe in sequential data 
+    # BUG: need to remove the timestamps also as part of the above process
+    # t = t_actual[0:len(x)]
+    # BUG: need to remove the timestamps also as part of the above process
+    # CC test
+    t = list(sequential_data['timestamp'])
+    # CC test end
 
-sequential_data.drop(labels = bef_indices, axis = 0, inplace = True)
+    return x,y,z,r
 
-# Make a basic timebase using spin duration and number of vectors
+x,y,z,r = extract_ext()
 
-timebase_length = int(len(sequential_data))
-
-t_actual = make_t(ext_entry, t_spin, ext_exit, timebase_length)
-
-# CC test added times to DF
-sequential_data.insert(0,'timestamp',t_actual)
-# CC Test: the first row usuually not valid
-sequential_data.drop(sequential_data.index[0],inplace=True) 
-
-
-sequential_data.reset_index(drop = True, inplace = True)
-
-# change to array
-
-
-ra = np.array(sequential_data['resolution'].astype(int))
-
-#remove the vectors at which a range change occurs
-range_change_index = [i+1 if (ra[i+1] - ra[i]) != 0 else i-i for i in np.arange(0,len(ra)-1)]
-                 
-#finding the index of the first vector after a range change
-#rci is an acronym for range change indices
-
-rci  = list(filter(lambda num: num != 0, range_change_index))
-
-#and the indices of the next 3 
-rci_h1 = [i+1 for i in rci]
-rci_h2 = [i+1 for i in rci]
-rci_h3 = [i+1 for i in rci]
-rci_h4 = [i+1 for i in rci]
-rci_h5 = [i+1 for i in rci]
-rci_h6 = [i+1 for i in rci]
-rci_h7 = [i+1 for i in rci]
-
-range_change_indices = rci + rci_h1 + rci_h2 +rci_h3 + rci_h4 + rci_h5 + rci_h6 + rci_h7
-
-
-sequential_data.drop(labels = range_change_indices, axis = 0, inplace = True)
-
-#change to array
-
-resets = sequential_data['reset'].astype(float)
-r = np.array(sequential_data['resolution'].astype(int))
-x = np.array(sequential_data['x'].astype(float))
-y = np.array(sequential_data['y'].astype(float))
-z = np.array(sequential_data['z'].astype(float))
-
-
-change_indices = []
-
-
+#%%
+# plot the raw timestamped data
 name = craft + '_' + datadate
-
-# BUG: need to remove the timestamps also as part of the above process
-# t = t_actual[0:len(x)]
-# BUG: need to remove the timestamps also as part of the above process
-# CC test
-t = list(sequential_data['timestamp'])
-# CC test end
-
-
-
-
 quickplot(name + ' Raw Timestamped','time [UTC]','count [#]')
 
 #%%
