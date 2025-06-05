@@ -350,41 +350,37 @@ ext_entry, ext_exit, dumpdate, datadate, t_spin = find_times()
 cal_filename = find_cal_file(craft, ext_entry, calparams_filepath)
 print('Calibration File \n',cal_filename)
 #%%
-# extract cal and find BS file
+# extract cal
+def extract_cal():
+    cal_params = pd.read_csv(cal_filename, header = None, sep = ',|:', names = ['param', 'x', 'y', 'z'], on_bad_lines = 'skip', engine = 'python') 
 
-cal_params = pd.read_csv(cal_filename, header = None, sep = ',|:', names = ['param', 'x', 'y', 'z'], on_bad_lines = 'skip', engine = 'python') 
+    x_offsets = cal_params[cal_params['param'].str.strip() == 'Offsets (nT)']['x'].astype(float).values.tolist()
+    x_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['x'].astype(float).values.tolist()
+    y_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['y'].astype(float).values.tolist()
+    z_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['z'].astype(float).values.tolist()
 
-x_offsets = cal_params[cal_params['param'].str.strip() == 'Offsets (nT)']['x'].astype(float).values.tolist()
-x_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['x'].astype(float).values.tolist()
-y_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['y'].astype(float).values.tolist()
-z_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['z'].astype(float).values.tolist()
+    while len(x_offsets) < 6:
+        x_offsets.append(0.0)
+    while len(x_gains) < 6:
+        x_gains.append(1.0)
+    while len(y_gains) < 6:
+        y_gains.append(1.0)
+    while len(z_gains) < 6:
+        z_gains.append(1.0)
 
-while len(x_offsets) < 6:
-    x_offsets.append(0.0)
+    yz_gains = []
+    for i in np.arange(0,6):
+        yz_gain = (float(y_gains[i]) + float(z_gains[i])) / 2.0
+        yz_gains.append(yz_gain)
+
+    calparams = {'x_offsets':  x_offsets,\
+                'x_gains':    x_gains,\
+                'yz_gains':   yz_gains}
+
+    return calparams
+
+calparams = extract_cal()
         
-while len(x_gains) < 6:
-    x_gains.append(1.0)
-
-while len(y_gains) < 6:
-    y_gains.append(1.0)
-
-while len(z_gains) < 6:
-    z_gains.append(1.0)
-
-yz_gains = []
-
-for i in np.arange(0,6):
-
-    yz_gain = (float(y_gains[i]) + float(z_gains[i])) / 2.0
-        
-    yz_gains.append(yz_gain)
-
-calparams = {'x_offsets':  x_offsets,\
-             'x_gains':    x_gains,\
-             'yz_gains':   yz_gains}
-
-del x_offsets, x_gains, y_gains, z_gains
-    
 class packet():
 
     counter=0
