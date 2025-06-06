@@ -9,24 +9,18 @@ Created on Sun Jul 28 11:35:50 2024
 # from fgmfilepaths import craft,entry_date,lib_path,calparams_filepath,BS_filepath,filebase_cal
 # CC: I moved this back here as Python holds it in the cache and it was not being updated
 import numpy as np
-
 from fgmfiletools import fgmsave,fgmopen
 from fgmplottools import fgmplot
-
 import matplotlib.pyplot as plt
 plt.rcParams['lines.linewidth'] = 1
 #plt.rcParams['lines.marker'] = '.'
 #plt.rcParams['lines.markersize'] = 1
-
 import pandas as pd
-
 import os, fnmatch
-
 from datetime import datetime, timedelta
-
 import matplotlib.pyplot as plt
-
-from functions import quicksave,quickopen
+# no longer needed:
+# from functions import quicksave,quickopen
 #%%
 # defining functions
 #s16 changes unsigned 16 bit hex numbers to signed (positive and negative)
@@ -622,7 +616,7 @@ x,y,z = apply_cal()
 
 quickplot(name + ' Calibrated','time [UTC]','[nT]')
 
-
+#%%
 # timespan of the data
 
 print('First vector time:', t[0].isoformat())
@@ -643,11 +637,6 @@ print('Timebase Start:')
 print(start_time_iso)
 print('Timebase Stop:')
 print(end_time_iso)
-        
-# end_time = t[-1].strftime('%Y%m%d_%H%M%S')    
-# Isoformat: 2001-03-24T23:25:54.000Z
-# end_time_iso = t[-1].strftime('%Y-%m-%dT%H:%M:%SZ')  
-
 
 #%%
 # save the calibrated data to a file
