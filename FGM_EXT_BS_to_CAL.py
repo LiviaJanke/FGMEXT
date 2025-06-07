@@ -463,17 +463,6 @@ def process_bs_file():
 
     # del data, datalen, packets
 
-    plt.plot(ext_nums, ext_resets, label = 'all', markersize = 1)
-    plt.plot(valid_nums, valid_ext_resets, label = 'valid', marker = 'x', markersize = 1)
-    plt.title('Packet Resets')
-    plt.legend()
-    plt.show()
-
-    plt.plot(scets, ext_nums,  label = 'all')
-    plt.plot(valid_scets, valid_nums,  label = 'valid')
-    plt.title('Packet SCETs')
-    plt.legend()
-    plt.show()
 
     reset_counter = 1
     resets = []
@@ -505,19 +494,25 @@ def process_bs_file():
     bef_indices = sequential_data.loc[sequential_data['x'] == 'bef'].index.tolist()
     af_indices = sequential_data.loc[sequential_data['z'] == 'af'].index.tolist()
 
+    plt.figure(figsize=(8, 2))
+    plt.plot(ext_nums, ext_resets, label = 'all', markersize = 1)
+    plt.plot(valid_nums, valid_ext_resets, label = 'valid', marker = 'x', markersize = 1)
+    plt.title('Packet Resets'); plt.legend()
+    plt.figure(figsize=(8, 2))
+    plt.plot(scets, ext_nums,  label = 'all')
+    plt.plot(valid_scets, valid_nums,  label = 'valid')
+    plt.title('Packet SCETs'); plt.figure(figsize=(8, 2))
     plt.plot(bef_indices, label = 'bef', marker = 'x')
     plt.plot(af_indices, label = 'af')
-    plt.title('AF and BEF indices (missing ends, missing starts)')
-    plt.legend()
-    plt.show()
+    plt.title('AF and BEF indices (missing ends, missing starts)'); plt.legend()
 
-    return sequential_data, bef_indices, af_indices
+    # return sequential_data, bef_indices, af_indices
 
-sequential_data, bef_indices, af_indices = process_bs_file()
+# sequential_data, bef_indices, af_indices = process_bs_file()
 
-#%%
+
 # extract EXT
-def extract_ext():
+# def extract_ext():
     for i in af_indices:
         if i <  len(sequential_data['reset']) - 1 and sequential_data.loc[i+1, 'x'] == 'bef':
             sequential_data.loc[i,'reset'] = sequential_data.loc[i+1, 'reset']
@@ -584,7 +579,7 @@ def extract_ext():
     # CC test end
     return t,x,y,z,r
 
-t,x,y,z,r = extract_ext()
+t,x,y,z,r = process_bs_file()
 
 #%%
 # plot the raw timestamped data
