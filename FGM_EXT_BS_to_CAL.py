@@ -22,6 +22,25 @@ import matplotlib.pyplot as plt
 # no longer needed:
 # from functions import quicksave,quickopen
 #%%
+# Defining constant variables, lists etc...
+global t, x, y, z, r
+craft = 'C3'
+date_entry = '20020403'
+lib_path = './Lib/'
+if os.environ.get('LOGNAME') == 'cmcarr':
+    cal_filepath = '/Volumes/cluster/calibration/'
+    BS_filepath = '/Volumes/cluster/bs/'
+else:
+    cal_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/calibration'
+    #lib_path = 'C:/Users/Test/Documents/FGM_Extended_Mode/Lib/'
+    BS_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/BS/'
+
+# save location for output data
+# filebase_cal = './' + craft + '_EXT_Calibrated/'
+save_path = './' + date_entry + '/' 
+print('Craft: ' + craft)
+print('Entry Date: ' + date_entry)
+#%%
 # defining functions
 #s16 changes unsigned 16 bit hex numbers to signed (positive and negative)
 def s16(val):
@@ -273,25 +292,6 @@ class packet():
     def __str__(self):
         return("{:7s}".format("#"+str(self.pktcnt))+" | "+" ".join('{:02X}'.format(n) for n in self.cdds)+" | "+" ".join('{:02X}'.format(n) for n in self.payload[0:30]))
 
-#%%
-# Defining constant variables, lists etc...
-global t, x, y, z, r
-craft = 'C3'
-date_entry = '20020403'
-lib_path = './Lib/'
-if os.environ.get('LOGNAME') == 'cmcarr':
-    cal_filepath = '/Volumes/cluster/calibration/'
-    BS_filepath = '/Volumes/cluster/bs/'
-else:
-    cal_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/calibration'
-    #lib_path = 'C:/Users/Test/Documents/FGM_Extended_Mode/Lib/'
-    BS_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/BS/'
-
-# save location for output data
-# filebase_cal = './' + craft + '_EXT_Calibrated/'
-save_path = './' + date_entry + '/' 
-print('Craft: ' + craft)
-print('Entry Date: ' + date_entry)
 
 #%%
 # Find EXT entry/exit/dump times
@@ -729,5 +729,3 @@ def valplot():
     return
 
 valplot()
-
-# %%
