@@ -6,7 +6,7 @@ Created on Sun Jul 28 11:35:50 2024
 
 @author: Livia
 """
-# from fgmfilepaths import craft,entry_date,lib_path,calparams_filepath,BS_filepath,filebase_cal
+# from fgmfilepaths import craft,date_entry,lib_path,cal_filepath,BS_filepath,filebase_cal
 # CC: I moved this back here as Python holds it in the cache and it was not being updated
 import numpy as np
 from fgmfiletools import fgmsave,fgmopen
@@ -166,10 +166,10 @@ def quickplot(titletext,xlabeltext,ylabeltext):
     plt.show()
     return
 
-def make_t(ext_entry, t_spin, ext_exit, x):
+def make_t(date_time_entry, t_spin, date_time_exit, x):
     t = []
     for i in range(1,x+1): # CC edit: changed to 1 to x+1 for compatibility with my code
-        t.append(ext_entry + timedelta(seconds=i*t_spin))
+        t.append(date_time_entry + timedelta(seconds=i*t_spin))
     return t
 
 def find_cal_file(craft,entry,path):
@@ -276,21 +276,21 @@ class packet():
 #%%
 # Defining constant variables, lists etc...
 craft = 'C3'
-entry_date = '20020403'
+date_entry = '20020403'
 lib_path = './Lib/'
 if os.environ.get('LOGNAME') == 'cmcarr':
-    calparams_filepath = '/Volumes/cluster/calibration/'
+    cal_filepath = '/Volumes/cluster/calibration/'
     BS_filepath = '/Volumes/cluster/bs/'
 else:
-    calparams_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/calibration'
+    cal_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/calibration'
     #lib_path = 'C:/Users/Test/Documents/FGM_Extended_Mode/Lib/'
     BS_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/BS/'
 
 # save location for output data
 # filebase_cal = './' + craft + '_EXT_Calibrated/'
-filebase_cal = './' + entry_date + '/' 
+filebase_cal = './' + date_entry + '/' 
 print('Craft: ' + craft)
-print('Entry Date: ' + entry_date)
+print('Entry Date: ' + date_entry)
 
 #%%
 # Find EXT entry/exit/dump times
@@ -300,39 +300,39 @@ def find_times():
     starts_stops_spins_df = pd.read_csv(lib_path + craft + '_SATT_start_stop_spins',names = ['Starts', 'Stops', 'Spins'])
     ext_entries_df = pd.read_csv(lib_path + craft + '_Ext_Entries', header = None)
     ext_entries = pd.to_datetime(ext_entries_df[0])
-    ext_exits_df = pd.read_csv(lib_path + craft + '_Ext_Exits', header = None)
-    ext_exits = pd.to_datetime(ext_exits_df[0])
+    date_time_exits_df = pd.read_csv(lib_path + craft + '_Ext_Exits', header = None)
+    date_time_exits = pd.to_datetime(date_time_exits_df[0])
     MSA_dumps_df = pd.read_csv(lib_path + craft + '_MSA_Dump_times', header = None)
     MSA_dumps = pd.to_datetime(MSA_dumps_df[0])
 
     these_entries = []
     for i in ext_entries:
-        if str(i.strftime('%Y%m%d')) == entry_date:
+        if str(i.strftime('%Y%m%d')) == date_entry:
             these_entries.append(np.where(ext_entries == i)[0])
             
-    ext_entry_index = these_entries[0][0]
-    ext_entry = ext_entries[ext_entry_index]
-    next_ext_entry = ext_entries[ext_entry_index + 1]
+    date_time_entry_index = these_entries[0][0]
+    date_time_entry = ext_entries[date_time_entry_index]
+    next_date_time_entry = ext_entries[date_time_entry_index + 1]
 
-    if ext_entry_index >=1:
-        prev_ext_entry = ext_entries[ext_entry_index - 1]
-        prev_ext_exit = closest_higher_date(ext_exits, prev_ext_entry)
-        prev_MSA_dump =  closest_higher_date(MSA_dumps, prev_ext_exit)
+    if date_time_entry_index >=1:
+        prev_date_time_entry = ext_entries[date_time_entry_index - 1]
+        prev_date_time_exit = closest_higher_date(date_time_exits, prev_date_time_entry)
+        prev_MSA_dump =  closest_higher_date(MSA_dumps, prev_date_time_exit)
 
-    ext_exit = closest_higher_date(ext_exits, ext_entry)
-    next_ext_exit = closest_higher_date(ext_exits, next_ext_entry)
+    date_time_exit = closest_higher_date(date_time_exits, date_time_entry)
+    next_date_time_exit = closest_higher_date(date_time_exits, next_date_time_entry)
 
-    MSA_dump = closest_higher_date(MSA_dumps, ext_exit)
-    next_MSA_dump =  closest_higher_date(MSA_dumps, next_ext_exit)
+    MSA_dump = closest_higher_date(MSA_dumps, date_time_exit)
+    next_MSA_dump =  closest_higher_date(MSA_dumps, next_date_time_exit)
 
-    duration = ext_exit - ext_entry
+    duration = date_time_exit - date_time_entry
 
     # expected_packet_num = duration/timedelta(minutes=20, seconds=23)
 
-    if ext_exit > next_ext_entry:            
+    if date_time_exit > next_date_time_entry:            
         raise Exception("Unmatched Entry")
 
-    if MSA_dump > next_ext_exit:
+    if MSA_dump > next_date_time_exit:
         raise Exception("No Dump")
         # this covers the whole late and early half thing no?
         # If dump time is greater than next exit, then 'no dump' is raised
@@ -351,42 +351,42 @@ def find_times():
         # late_half = True
         print('Dump Contains two EXT periods - this is the second')
         
-    closest_start = np.min(abs(pd.to_datetime(starts_stops_spins_df['Starts']) - ext_entry))
-    closest_stop = np.min(abs(pd.to_datetime(starts_stops_spins_df['Stops']) - ext_exit))
+    closest_start = np.min(abs(pd.to_datetime(starts_stops_spins_df['Starts']) - date_time_entry))
+    closest_stop = np.min(abs(pd.to_datetime(starts_stops_spins_df['Stops']) - date_time_exit))
 
     if closest_start < closest_stop:
-        SATT_index = list(abs(pd.to_datetime(starts_stops_spins_df['Starts']) - ext_entry)).index(closest_start)
+        SATT_index = list(abs(pd.to_datetime(starts_stops_spins_df['Starts']) - date_time_entry)).index(closest_start)
             
     if closest_start >= closest_stop:
-        SATT_index = list(abs(pd.to_datetime(starts_stops_spins_df['Stops']) - ext_exit)).index(closest_stop)
+        SATT_index = list(abs(pd.to_datetime(starts_stops_spins_df['Stops']) - date_time_exit)).index(closest_stop)
 
     t_spin = 60 / starts_stops_spins_df['Spins'].iloc[SATT_index]
 
-    # duration = ext_exit - ext_entry
+    # duration = date_time_exit - date_time_entry
 
     # expected_packet_num = duration/timedelta(minutes=20, seconds=23)
 
-    print('EXT Entry Time',ext_entry)
-    print('EXT Exit Time',ext_exit)
+    print('EXT Entry Time',date_time_entry)
+    print('EXT Exit Time',date_time_exit)
     print('EXT Duration',duration)
 
-    dumpdate = MSA_dump.strftime('%Y%m%d')
-    datadate = ext_entry.strftime('%Y%m%d')
+    date_dump = MSA_dump.strftime('%Y%m%d')
+    date_data = date_time_entry.strftime('%Y%m%d')
 
-    # year = ext_entry.strftime('%y')
-    # month = ext_entry.strftime('%m')
-    # formatted_entry = ext_entry.strftime('%Y%m%d')=
-    # formatted_exit = ext_exit.strftime('%Y%m%d')
+    # year = date_time_entry.strftime('%y')
+    # month = date_time_entry.strftime('%m')
+    # formatted_entry = date_time_entry.strftime('%Y%m%d')=
+    # formatted_exit = date_time_exit.strftime('%Y%m%d')
 
     print('MSA Dump Time', MSA_dump)
 
-    return ext_entry, ext_exit, dumpdate, datadate, t_spin
+    return date_time_entry, date_time_exit, date_dump, date_data, t_spin
 
-ext_entry, ext_exit, dumpdate, datadate, t_spin = find_times()
+date_time_entry, date_time_exit, date_dump, date_data, t_spin = find_times()
 
 #%%
 # Find calibration file
-cal_filename = find_cal_file(craft, ext_entry, calparams_filepath)
+cal_filename = find_cal_file(craft, date_time_entry, cal_filepath)
 print('Calibration File \n',cal_filename)
 #%%
 # extract cal
@@ -412,24 +412,24 @@ def extract_cal():
         yz_gain = (float(y_gains[i]) + float(z_gains[i])) / 2.0
         yz_gains.append(yz_gain)
 
-    calparams = {'x_offsets':  x_offsets,\
+    cal_params = {'x_offsets':  x_offsets,\
                 'x_gains':    x_gains,\
                 'yz_gains':   yz_gains}
 
-    return calparams
+    return cal_params
 
-calparams = extract_cal()
+cal_params = extract_cal()
         
 #%%        
 # Find BS file
-BS_filename = find_BS_file(dumpdate[2:], craft, BS_filepath)
+BS_filename = find_BS_file(date_dump[2:], craft, BS_filepath)
 print('Burst Science file \n',BS_filename)
 
 #%%
 # process BS file
 def process_bs_file():
     file = open(BS_filename,"rb")
-    # del BS_filename, BS_filepath, calparams_filepath, cal_filename
+    # del BS_filename, BS_filepath, cal_filepath, cal_filename
 
     # this is the entire BS file retrieved on the dump date, including Burst Science data 
     # D Burst Science packets have size 2232
@@ -534,7 +534,7 @@ def process_bs_file():
     # Make a basic timebase using spin duration and number of vectors
     timebase_length = int(len(sequential_data))
     # make timeline
-    t_actual = make_t(ext_entry, t_spin, ext_exit, timebase_length)
+    t_actual = make_t(date_time_entry, t_spin, date_time_exit, timebase_length)
     # CC test added times to DF
     sequential_data.insert(0,'timestamp',t_actual)
     # CC Test: the first row usuually not valid
@@ -583,7 +583,7 @@ t,x,y,z,r = process_bs_file()
 
 #%%
 # plot the raw timestamped data
-name = craft + '_' + datadate
+name = craft + '_' + date_data
 quickplot(name + ' Raw Timestamped','time [UTC]','count [#]')
 
 #%%
@@ -599,9 +599,9 @@ quickplot(name + ' Nominal Scaling','time [UTC]','[nT]')
 # apply approximate cal using orbit cal
 def apply_cal():
     for i in range(0,len(t)):
-        Ox = calparams['x_offsets'][r[i]-2]
-        Gx = calparams['x_gains'][r[i]-2]
-        Gyz = calparams['yz_gains'][r[i]-2]
+        Ox = cal_params['x_offsets'][r[i]-2]
+        Gx = cal_params['x_gains'][r[i]-2]
+        Gyz = cal_params['yz_gains'][r[i]-2]
         x[i] = (x[i] - Ox) / Gx
         y[i] = y[i] / Gyz
         z[i] = z[i] / Gyz
@@ -678,15 +678,15 @@ f = open(metadata_savename, "w")
 # paths not needed as they are in my environment
 # f.write('export PATH=$PATH:/cluster/operations/software/dp/bin/:/cluster/operations/software/caa \n')
 # FGMPATH also in my environment, and points to /cluster/operations/calibration/default - TUBS mirror is not used / not correct
-# f.write('export FGMPATH=$PATH:/cluster/operations/calibration/tubs_mirror/' + str(datadate[:4]) + '/' + str(datadate[4:6]) + ' \n')
+# f.write('export FGMPATH=$PATH:/cluster/operations/calibration/tubs_mirror/' + str(date_data[:4]) + '/' + str(date_data[4:6]) + ' \n')
 # f.write('export FGMPATH=/home/lme19/calibration \n')
 # f.write('export SATTPATH=. \n')
 # f.write('export ORBITPATH=. \n')
-f.write('putsatt /cluster/data/raw/' + str(datadate[:4]) + '/' + str(datadate[4:6]) + '/' +str(craft) + '_' + str(datadate[2:]) + '_B.SATT \n')
-f.write('putsatt /cluster/data/raw/' + str(dumpdate[:4]) + '/' + str(dumpdate[4:6]) + '/' +str(craft) + '_' + str(dumpdate[2:]) + '_B.SATT \n')
+f.write('putsatt /cluster/data/raw/' + str(date_data[:4]) + '/' + str(date_data[4:6]) + '/' +str(craft) + '_' + str(date_data[2:]) + '_B.SATT \n')
+f.write('putsatt /cluster/data/raw/' + str(date_dump[:4]) + '/' + str(date_dump[4:6]) + '/' +str(craft) + '_' + str(date_dump[2:]) + '_B.SATT \n')
 # works mostly, but ideally, should be next calendar day?
-f.write('putstof /cluster/data/raw/' + str(datadate[:4]) + '/' + str(datadate[4:6]) + '/' +str(craft) + '_' + str(datadate[2:]) + '_B.STOF \n')
-f.write('putstof /cluster/data/raw/' + str(dumpdate[:4]) + '/' + str(dumpdate[4:6]) + '/' +str(craft) + '_' + str(dumpdate[2:]) + '_B.STOF \n')
+f.write('putstof /cluster/data/raw/' + str(date_data[:4]) + '/' + str(date_data[4:6]) + '/' +str(craft) + '_' + str(date_data[2:]) + '_B.STOF \n')
+f.write('putstof /cluster/data/raw/' + str(date_dump[:4]) + '/' + str(date_dump[4:6]) + '/' +str(craft) + '_' + str(date_dump[2:]) + '_B.STOF \n')
 
 # f.write('./ext2tvec -i ' + str(craft) + '_EXT_Calibrated/' + str(craft) +  '_' + str(start_time) + '_' + str(end_time) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM_' + str(craft) + '_' + start_time + '_' + end_time + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V10.txt TIME_SPAN ' + str(start_time_iso) + '/' + str(end_time_iso) + ' version 01')
 # CC edited:
