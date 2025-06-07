@@ -275,6 +275,7 @@ class packet():
 
 #%%
 # Defining constant variables, lists etc...
+global t, x, y, z, r
 craft = 'C3'
 date_entry = '20020403'
 lib_path = './Lib/'
@@ -288,7 +289,7 @@ else:
 
 # save location for output data
 # filebase_cal = './' + craft + '_EXT_Calibrated/'
-filebase_cal = './' + date_entry + '/' 
+save_path = './' + date_entry + '/' 
 print('Craft: ' + craft)
 print('Entry Date: ' + date_entry)
 
@@ -583,8 +584,7 @@ t,x,y,z,r = process_bs_file()
 
 #%%
 # plot the raw timestamped data
-name = craft + '_' + date_data
-quickplot(name + ' Raw Timestamped','time [UTC]','count [#]')
+quickplot(craft + '_' + date_data + ' Raw Timestamped','time [UTC]','count [#]')
 
 #%%
 # nominal scaling
@@ -594,7 +594,7 @@ x = x * (2*64/2**15) * 4**(r-2)
 y = y * (2*64/2**15) * 4**(r-2) * (np.pi/4)
 z = z * (2*64/2**15) * 4**(r-2) * (np.pi/4)
 
-quickplot(name + ' Nominal Scaling','time [UTC]','[nT]')
+quickplot(craft + '_' + date_data + ' Nominal Scaling','time [UTC]','[nT]')
 #%%
 # apply approximate cal using orbit cal
 def apply_cal():
@@ -609,47 +609,54 @@ def apply_cal():
 
 x,y,z = apply_cal()
 
-quickplot(name + ' Calibrated','time [UTC]','[nT]')
+quickplot(craft + '_' + date_data + ' Calibrated','time [UTC]','[nT]')
 
 #%%
 # timespan of the data
+def dataset_timespan():
+    # note that the start of the interval needs to be  rounded DOWN to the nearest second
+    # and the end of interval needs to be rounded UP 
+    start = t[0].strftime('%Y%m%d_%H%M%S')
+    start_iso = t[0].strftime('%Y-%m-%dT%H:%M:%SZ') 
+    temp_t = t[-1].replace(microsecond=0) + timedelta(seconds=1) 
+    end = temp_t.strftime('%Y%m%d_%H%M%S')
+    end_iso = temp_t.strftime('%Y-%m-%dT%H:%M:%SZ')
+    print('Dataset first vector time:', t[0].isoformat())
+    print('Dataset last vector time:', t[-1].isoformat())
+    print('Dataset Duration:',t[-1] - t[0])
+    return start, start_iso, end, end_iso
+dataset_start, dataset_start_iso, dataset_end, dataset_end_iso = dataset_timespan() 
 
-print('First vector time:', t[0].isoformat())
-print('Last vector time:', t[-1].isoformat())
-print('Timebase Duration:',t[-1] - t[0])
-
-# note that the start of the interval needs to be  rounded DOWN to the nearest second
-# and the end of interval needs to be rounded UP 
-
-start_time = t[0].strftime('%Y%m%d_%H%M%S')
-start_time_iso = t[0].strftime('%Y-%m-%dT%H:%M:%SZ') 
-
-temp_t = t[-1].replace(microsecond=0) + timedelta(seconds=1) 
-end_time = temp_t.strftime('%Y%m%d_%H%M%S') 
-end_time_iso = temp_t.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-print('Timebase Start:')
-print(start_time_iso)
-print('Timebase Stop:')
-print(end_time_iso)
 
 #%%
 # save the calibrated data to a file
-savename = filebase_cal + craft + '_' + start_time + '_' + end_time + '_calibrated.txt'
-fgmsave(savename,t,x,y,z,r)
+def save_data():
+    
+
+    print('Timebase Start:')
+    print(dataset_start)
+    print('Timebase Stop:')
+    print(dataset_end)
+
+    savename = save_path + craft + '_' + dataset_start + '_' + dataset_end + '_calibrated.txt'
+    fgmsave(savename,t,x,y,z,r)
+    print('Saved to: ' + savename)
+    return
+
+save_data()
     
 # %%
 # if necessary, edit the _calibrated.txt file, directly in the editor, to remove any residual spikes
 # then reopen here and plot to check before continuing with the processing steps
 def finalcheck():
+    global t, x, y, z, r
     # open the file
-    filename = craft + '_' + start_time + '_' + end_time + '_calibrated.txt'
-    dataset = fgmopen(filebase_cal + '/',filename)
-    global t, x, y, z, r, B
+    filename = craft + '_' + dataset_start + '_' + dataset_end + '_calibrated.txt'
+    dataset = fgmopen(save_path + '/',filename)
     t = dataset['t']
     x, y, z = dataset['Bx'], dataset['By'], dataset['Bz']
     r = dataset['range']
-    B = np.sqrt(x**2 + y**2 + z**2)
+    # B = np.sqrt(x**2 + y**2 + z**2)
     # plot the data
     quickplot(filename + ' Final Check', 'time [UTC]', '[nT]')
     
@@ -660,7 +667,7 @@ finalcheck()
 #%%
 # print a string to scp the file to alsvid
 def scp2alsvid():
-    scp_script = 'scp ' + filebase_cal + craft + '_' + start_time + '_' + end_time + '_calibrated.txt alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext' + '\n'
+    scp_script = 'scp ' + save_path + craft + '_' + dataset_start + '_' + dataset_end + '_calibrated.txt alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext' + '\n'
     print(scp_script)
     return
 
@@ -669,7 +676,7 @@ scp2alsvid()
 #%%
 # save the metadata file
 
-metadata_savename =  filebase_cal + '/' + craft + '_' + start_time + '_' + end_time + '_info.txt'
+metadata_savename =  save_path + craft + '_' + dataset_start + '_' + dataset_end + '_info.txt'
 print('Metadata file: ' + metadata_savename)
 
 f = open(metadata_savename, "w")
@@ -688,18 +695,17 @@ f.write('putsatt /cluster/data/raw/' + str(date_dump[:4]) + '/' + str(date_dump[
 f.write('putstof /cluster/data/raw/' + str(date_data[:4]) + '/' + str(date_data[4:6]) + '/' +str(craft) + '_' + str(date_data[2:]) + '_B.STOF \n')
 f.write('putstof /cluster/data/raw/' + str(date_dump[:4]) + '/' + str(date_dump[4:6]) + '/' +str(craft) + '_' + str(date_dump[2:]) + '_B.STOF \n')
 
-# f.write('./ext2tvec -i ' + str(craft) + '_EXT_Calibrated/' + str(craft) +  '_' + str(start_time) + '_' + str(end_time) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM_' + str(craft) + '_' + start_time + '_' + end_time + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V10.txt TIME_SPAN ' + str(start_time_iso) + '/' + str(end_time_iso) + ' version 01')
+# f.write('./ext2tvec -i ' + str(craft) + '_EXT_Calibrated/' + str(craft) +  '_' + str(dataset_start) + '_' + str(dataset_end) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM_' + str(craft) + '_' + dataset_start + '_' + dataset_end + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V10.txt TIME_SPAN ' + str(dataset_start_iso) + '/' + str(dataset_end_iso) + ' version 01')
 # CC edited:
-f.write('ext2tvec -i ' + str(craft) + '_' + str(start_time) + '_' + str(end_time) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM__' + start_time + '_' + end_time + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V11.txt TIME_SPAN ' + str(start_time_iso) + '/' + str(end_time_iso) + ' version 01')
+f.write('ext2tvec -i ' + str(craft) + '_' + str(dataset_start) + '_' + str(dataset_end) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V11.txt TIME_SPAN ' + str(dataset_start_iso) + '/' + str(dataset_end_iso) + ' version 01')
 
 f.close()
 
-# %%
 #%%
 # print a string to scp the file from alsvid to local folder
 def scp2local():
-    cefname = str(craft) + '_CP_FGM_EXTM__' + start_time + '_' + end_time + '_V01.cef'
-    scp_script = 'scp alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext/' + filebase_cal[2:] + cefname + ' ' + filebase_cal 
+    cefname = str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V01.cef'
+    scp_script = 'scp alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext/' + save_path[2:] + cefname + ' ' + save_path 
     print(scp_script)
     return
 
@@ -707,8 +713,8 @@ scp2local()
 # %%
 # plot the CEF file
 def checkplot():
-    cefname = str(craft) + '_CP_FGM_EXTM__' + start_time + '_' + end_time + '_V01.cef'
-    dataset = fgmopen(filebase_cal,cefname)
+    cefname = str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V01.cef'
+    dataset = fgmopen(save_path,cefname)
     fgmplot(dataset)
     return
 
@@ -716,9 +722,9 @@ checkplot()
 # %%
 # optional - plot with other datasets for final validation
 def valplot():
-    cefname = str(craft) + '_CP_FGM_EXTM__' + start_time + '_' + end_time + '_V01.cef'
-    dataset = fgmopen(filebase_cal,cefname)
-    spin = fgmopen(filebase_cal, 'C3_CP_FGM_SPIN__20020403_175500_20020404_120500_V00.cef')
+    cefname = str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V01.cef'
+    dataset = fgmopen(save_path,cefname)
+    spin = fgmopen(save_path, 'C3_CP_FGM_SPIN__20020403_175500_20020404_120500_V00.cef')
     fgmplot([dataset,spin])
     return
 
