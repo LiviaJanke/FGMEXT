@@ -24,20 +24,19 @@ import matplotlib.pyplot as plt
 #%%
 # Defining constant variables, lists etc...
 global t, x, y, z, r
-craft = 'C3'
+craft = 'C1'
 date_entry = '20020403'
 lib_path = './Lib/'
 if os.environ.get('LOGNAME') == 'cmcarr':
-    cal_filepath = '/Volumes/cluster/calibration/'
-    BS_filepath = '/Volumes/cluster/bs/'
-else:
+    cal_filepath = '/Volumes/cluster/calibration/' # calibration files
+    BS_filepath = '/Volumes/cluster/bs/' # burst science data
+    save_path = '/Volumes/cluster/extm/' + date_entry + '/' # output data 
+elif os.environ.get('LOGNAME') == 'lme19':
     cal_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/calibration'
     #lib_path = 'C:/Users/Test/Documents/FGM_Extended_Mode/Lib/'
     BS_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/BS/'
+    # filebase_cal = './' + craft + '_EXT_Calibrated/'
 
-# save location for output data
-# filebase_cal = './' + craft + '_EXT_Calibrated/'
-save_path = './' + date_entry + '/' 
 print('Craft: ' + craft)
 print('Entry Date: ' + date_entry)
 #%%
@@ -631,18 +630,14 @@ dataset_start, dataset_start_iso, dataset_end, dataset_end_iso = dataset_timespa
 #%%
 # save the calibrated data to a file
 def save_data():
-    
-
     print('Timebase Start:')
     print(dataset_start)
     print('Timebase Stop:')
     print(dataset_end)
-
     savename = save_path + craft + '_' + dataset_start + '_' + dataset_end + '_calibrated.txt'
     fgmsave(savename,t,x,y,z,r)
     print('Saved to: ' + savename)
     return
-
 save_data()
     
 # %%

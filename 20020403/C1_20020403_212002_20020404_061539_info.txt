@@ -1,5 +1,0 @@
-putsatt /cluster/data/raw/2002/04/C1_020403_B.SATT 
-putsatt /cluster/data/raw/2002/04/C1_020404_B.SATT 
-putstof /cluster/data/raw/2002/04/C1_020403_B.STOF 
-putstof /cluster/data/raw/2002/04/C1_020404_B.STOF 
-ext2tvec -i C1_20020403_212002_20020404_061539_calibrated.txt | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O C1_CP_FGM_EXTM__20020403_212002_20020404_061539_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V10.txt TIME_SPAN 2002-04-03T21:20:02Z/2002-04-04T06:15:39Z version 01
