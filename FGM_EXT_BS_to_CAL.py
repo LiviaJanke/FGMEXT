@@ -726,7 +726,7 @@ f.close()
 # print a string to scp the file from alsvid to local folder
 def scp2local():
     cefname = str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V01.cef'
-    scp_script = 'scp alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext/' + path_out[2:] + cefname + ' ' + path_out 
+    scp_script = 'scp alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext/' + cefname + ' ' + path_out 
     print(scp_script)
     return
 
@@ -745,8 +745,9 @@ checkplot()
 def valplot():
     cefname = str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V01.cef'
     dataset = fgmopen(path_out,cefname)
-    spin = fgmopen(path_out, 'C3_CP_FGM_SPIN__20020403_175500_20020404_120500_V00.cef')
+    spin = fgmopen(path_out, 'C1_CP_FGM_SPIN__20010324_195500_20010325_200500_V00.cef')
     fgmplot([dataset,spin])
     return
 
 valplot()
+# %%
