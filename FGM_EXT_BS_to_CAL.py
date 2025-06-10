@@ -1,13 +1,11 @@
 #%% 
-# libraries
+# libraries, functions and setup
 # -*- coding: utf-8 -*-
 """
 Created on Sun Jul 28 11:35:50 2024
 
 @author: Livia
 """
-# from fgmfilepaths import craft,date_entry,lib_path,cal_filepath,BS_filepath,filebase_cal
-# CC: I moved this back here as Python holds it in the cache and it was not being updated
 import numpy as np
 from fgmfiletools import fgmsave,fgmopen
 from fgmplottools import fgmplot
@@ -19,27 +17,53 @@ import pandas as pd
 import os, fnmatch
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
-# no longer needed:
-# from functions import quicksave,quickopen
-#%%
 # Defining constant variables, lists etc...
 global t, x, y, z, r
-craft = 'C1'
-date_entry = '20020403'
-lib_path = './Lib/'
-if os.environ.get('LOGNAME') == 'cmcarr':
-    cal_filepath = '/Volumes/cluster/calibration/' # calibration files
-    BS_filepath = '/Volumes/cluster/bs/' # burst science data
-    save_path = '/Volumes/cluster/extm/' + date_entry + '/' # output data 
-elif os.environ.get('LOGNAME') == 'lme19':
-    cal_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/calibration'
-    #lib_path = 'C:/Users/Test/Documents/FGM_Extended_Mode/Lib/'
-    BS_filepath = 'C:/Users/Test/Documents/FGM_Extended_Mode/BS/'
-    # filebase_cal = './' + craft + '_EXT_Calibrated/'
+# setup processing parameters and filepaths from separate text file
+def setup(filename):
+    with open (filename,'r') as f:
+        for line in f:
+            cols = line.split('=')
+            varname = cols[0].strip()
+            varvalue = cols[1].strip()
+            if varname == 'craft':
+                craft = varvalue
+            elif varname == 'date_entry':
+                date_entry = varvalue
+            elif varname == 'path_lib':
+                if not os.path.isdir(varvalue):
+                    raise Exception('No directory {}'.format(varvalue))
+                else:
+                    path_lib = varvalue
+            elif varname == 'path_cal':
+                if not os.path.isdir(varvalue):
+                    raise Exception('No directory {}'.format(varvalue))
+                else:
+                    path_cal = varvalue
+            elif varname == 'path_bs':
+                if not os.path.isdir(varvalue):
+                    raise Exception('No directory {}'.format(varvalue))
+                else:
+                    path_bs = varvalue
+            elif varname == 'path_out':
+                varvalue += date_entry + '/'
+                if not os.path.isdir(varvalue):
+                    raise Exception('No directory {}'.format(varvalue))
+                else:
+                    path_out = varvalue
+            else:
+                raise Exception('Invalid line {} in file {}'.format(line,filename))
+    return craft, date_entry, path_lib, path_cal, path_bs, path_out
 
+craft, date_entry, path_lib, path_cal, path_bs, path_out = setup('params.txt')
+                               
 print('Craft: ' + craft)
 print('Entry Date: ' + date_entry)
-#%%
+print('Extm Library: ',path_lib)
+print('Calibration files: ',path_cal)
+print('Burst Science files: ',path_bs)
+print('Save location: ',path_out)
+
 # defining functions
 #s16 changes unsigned 16 bit hex numbers to signed (positive and negative)
 def s16(val):
@@ -300,12 +324,12 @@ class packet():
 # validphid=(0x1F,0x47,0x6F,0x97,0x26,0x4E,0x76,0x9E,0x2D,0x55,0x7D,0xA5) # not used? (CC)
 
 def find_times():
-    starts_stops_spins_df = pd.read_csv(lib_path + craft + '_SATT_start_stop_spins',names = ['Starts', 'Stops', 'Spins'])
-    ext_entries_df = pd.read_csv(lib_path + craft + '_Ext_Entries', header = None)
+    starts_stops_spins_df = pd.read_csv(path_lib + craft + '_SATT_start_stop_spins',names = ['Starts', 'Stops', 'Spins'])
+    ext_entries_df = pd.read_csv(path_lib + craft + '_Ext_Entries', header = None)
     ext_entries = pd.to_datetime(ext_entries_df[0])
-    date_time_exits_df = pd.read_csv(lib_path + craft + '_Ext_Exits', header = None)
+    date_time_exits_df = pd.read_csv(path_lib + craft + '_Ext_Exits', header = None)
     date_time_exits = pd.to_datetime(date_time_exits_df[0])
-    MSA_dumps_df = pd.read_csv(lib_path + craft + '_MSA_Dump_times', header = None)
+    MSA_dumps_df = pd.read_csv(path_lib + craft + '_MSA_Dump_times', header = None)
     MSA_dumps = pd.to_datetime(MSA_dumps_df[0])
 
     these_entries = []
@@ -389,9 +413,8 @@ date_time_entry, date_time_exit, date_dump, date_data, t_spin = find_times()
 
 #%%
 # Find calibration file
-cal_filename = find_cal_file(craft, date_time_entry, cal_filepath)
+cal_filename = find_cal_file(craft, date_time_entry, path_cal)
 print('Calibration File \n',cal_filename)
-#%%
 # extract cal
 def extract_cal():
     cal_params = pd.read_csv(cal_filename, header = None, sep = ',|:', names = ['param', 'x', 'y', 'z'], on_bad_lines = 'skip', engine = 'python') 
@@ -422,13 +445,17 @@ def extract_cal():
     return cal_params
 
 cal_params = extract_cal()
-        
-#%%        
-# Find BS file
-BS_filename = find_BS_file(date_dump[2:], craft, BS_filepath)
-print('Burst Science file \n',BS_filename)
 
-#%%
+def print_cal():
+    print('x offsets \t',cal_params['x_offsets'])
+    print('x gains \t',cal_params['x_gains'])
+    print('yz gains \t',cal_params['yz_gains'])
+    return
+print_cal()
+#%%        
+# Find BS file, process and extract
+BS_filename = find_BS_file(date_dump[2:], craft, path_bs)
+print('Burst Science file \n',BS_filename)
 # process BS file
 def process_bs_file():
     file = open(BS_filename,"rb")
@@ -498,15 +525,16 @@ def process_bs_file():
     af_indices = sequential_data.loc[sequential_data['z'] == 'af'].index.tolist()
 
     plt.figure(figsize=(8, 2))
-    plt.plot(ext_nums, ext_resets, label = 'all', markersize = 1)
-    plt.plot(valid_nums, valid_ext_resets, label = 'valid', marker = 'x', markersize = 1)
+    plt.plot(ext_nums, ext_resets, label = 'all', markersize = 10, marker = '.')
+    plt.plot(valid_nums, valid_ext_resets, label = 'valid', markersize = 5, marker = '.')
     plt.title('Packet Resets'); plt.legend()
     plt.figure(figsize=(8, 2))
-    plt.plot(scets, ext_nums,  label = 'all')
-    plt.plot(valid_scets, valid_nums,  label = 'valid')
-    plt.title('Packet SCETs'); plt.figure(figsize=(8, 2))
+    plt.plot(scets, ext_nums,  label = 'all', markersize = 10, marker = '.')
+    plt.plot(valid_scets, valid_nums,  label = 'valid', markersize = 5, marker = '.')
+    plt.title('Packet SCETs'); plt.legend()
+    plt.figure(figsize=(8, 2))
     plt.plot(bef_indices, label = 'bef', marker = 'x')
-    plt.plot(af_indices, label = 'af')
+    plt.plot(af_indices, label = 'af',marker='+')
     plt.title('AF and BEF indices (missing ends, missing starts)'); plt.legend()
 
     # return sequential_data, bef_indices, af_indices
@@ -589,15 +617,13 @@ t,x,y,z,r = process_bs_file()
 quickplot(craft + '_' + date_data + ' Raw Timestamped','time [UTC]','count [#]')
 
 #%%
-# nominal scaling
+# scaling and calibration
 # nominal change from engineering units to nanotesla
 # using +/-64nT with 15 bits in range 2
 x = x * (2*64/2**15) * 4**(r-2)
 y = y * (2*64/2**15) * 4**(r-2) * (np.pi/4)
 z = z * (2*64/2**15) * 4**(r-2) * (np.pi/4)
-
-quickplot(craft + '_' + date_data + ' Nominal Scaling','time [UTC]','[nT]')
-#%%
+# quickplot(craft + '_' + date_data + ' Nominal Scaling','time [UTC]','[nT]')
 # apply approximate cal using orbit cal
 def apply_cal():
     for i in range(0,len(t)):
@@ -613,7 +639,6 @@ x,y,z = apply_cal()
 
 quickplot(craft + '_' + date_data + ' Calibrated','time [UTC]','[nT]')
 
-#%%
 # timespan of the data
 def dataset_timespan():
     # note that the start of the interval needs to be  rounded DOWN to the nearest second
@@ -623,21 +648,19 @@ def dataset_timespan():
     temp_t = t[-1].replace(microsecond=0) + timedelta(seconds=1) 
     end = temp_t.strftime('%Y%m%d_%H%M%S')
     end_iso = temp_t.strftime('%Y-%m-%dT%H:%M:%SZ')
-    print('Dataset first vector time:', t[0].isoformat())
-    print('Dataset last vector time:', t[-1].isoformat())
-    print('Dataset Duration:',t[-1] - t[0])
+    print('Dataset first vector time:\t', t[0].isoformat())
+    print('Dataset last vector time:\t', t[-1].isoformat())
+    print('Dataset Duration:\t\t',t[-1] - t[0])
     return start, start_iso, end, end_iso
 dataset_start, dataset_start_iso, dataset_end, dataset_end_iso = dataset_timespan() 
 
-
-#%%
 # save the calibrated data to a file
 def save_data():
     print('Timebase Start:')
     print(dataset_start)
     print('Timebase Stop:')
     print(dataset_end)
-    savename = save_path + craft + '_' + dataset_start + '_' + dataset_end + '_calibrated.txt'
+    savename = path_out + craft + '_' + dataset_start + '_' + dataset_end + '_calibrated.txt'
     fgmsave(savename,t,x,y,z,r)
     print('Saved to: ' + savename)
     return
@@ -650,7 +673,7 @@ def finalcheck():
     global t, x, y, z, r
     # open the file
     filename = craft + '_' + dataset_start + '_' + dataset_end + '_calibrated.txt'
-    dataset = fgmopen(save_path + '/',filename)
+    dataset = fgmopen(path_out + '/',filename)
     t = dataset['t']
     x, y, z = dataset['Bx'], dataset['By'], dataset['Bz']
     r = dataset['range']
@@ -665,7 +688,7 @@ finalcheck()
 #%%
 # print a string to scp the file to alsvid
 def scp2alsvid():
-    scp_script = 'scp ' + save_path + craft + '_' + dataset_start + '_' + dataset_end + '_calibrated.txt alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext' + '\n'
+    scp_script = 'scp ' + path_out + craft + '_' + dataset_start + '_' + dataset_end + '_calibrated.txt alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext' + '\n'
     print(scp_script)
     return
 
@@ -674,7 +697,7 @@ scp2alsvid()
 #%%
 # save the metadata file
 
-metadata_savename =  save_path + craft + '_' + dataset_start + '_' + dataset_end + '_info.txt'
+metadata_savename =  path_out + craft + '_' + dataset_start + '_' + dataset_end + '_info.txt'
 print('Metadata file: ' + metadata_savename)
 
 f = open(metadata_savename, "w")
@@ -703,7 +726,7 @@ f.close()
 # print a string to scp the file from alsvid to local folder
 def scp2local():
     cefname = str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V01.cef'
-    scp_script = 'scp alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext/' + save_path[2:] + cefname + ' ' + save_path 
+    scp_script = 'scp alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext/' + path_out[2:] + cefname + ' ' + path_out 
     print(scp_script)
     return
 
@@ -712,7 +735,7 @@ scp2local()
 # plot the CEF file
 def checkplot():
     cefname = str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V01.cef'
-    dataset = fgmopen(save_path,cefname)
+    dataset = fgmopen(path_out,cefname)
     fgmplot(dataset)
     return
 
@@ -721,8 +744,8 @@ checkplot()
 # optional - plot with other datasets for final validation
 def valplot():
     cefname = str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V01.cef'
-    dataset = fgmopen(save_path,cefname)
-    spin = fgmopen(save_path, 'C3_CP_FGM_SPIN__20020403_175500_20020404_120500_V00.cef')
+    dataset = fgmopen(path_out,cefname)
+    spin = fgmopen(path_out, 'C3_CP_FGM_SPIN__20020403_175500_20020404_120500_V00.cef')
     fgmplot([dataset,spin])
     return
 
