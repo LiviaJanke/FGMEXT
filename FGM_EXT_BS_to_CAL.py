@@ -191,6 +191,8 @@ def make_t(date_time_entry, t_spin, date_time_exit, x):
     return t
 
 def find_cal_file(craft,entry,path):
+    if not os.path.isdir(path):
+        raise Exception('No directory {}'.format(path))
     
     for root, dirs, files in os.walk(path):
         
@@ -245,6 +247,7 @@ def closest_higher_date(date_list, test_date):
             return date
 
     return sorted_list[-1]
+
 class packet():
     counter=0
     # .cdds is the CDDS packet header bytes (15)

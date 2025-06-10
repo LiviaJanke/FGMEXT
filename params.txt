@@ -1,0 +1,6 @@
+craft = C1
+date_entry =  20010322
+path_lib = ./Lib/
+path_cal = /Volumes/cluster/calibration/
+path_bs  = /Volumes/cluster/bs/
+path_out = /Volumes/cluster/extm/ 
