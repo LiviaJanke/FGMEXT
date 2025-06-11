@@ -686,45 +686,50 @@ def finalcheck():
 finalcheck() 
 
 #%%
-# print a string to scp the file to alsvid
-def scp2alsvid():
-    scp_script = 'scp ' + path_out + craft + '_' + dataset_start + '_' + dataset_end + '_calibrated.txt alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext' + '\n'
-    print(scp_script)
-    return
-
-scp2alsvid()
-
-#%%
 # save the metadata file
 # a function to return the CEF filename
 def cefname(version='01'):
     cefname = str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V' + version + '.cef'
     return cefname
 
-metadata_savename =  path_out + craft + '_' + dataset_start + '_' + dataset_end + '_info.txt'
-print('Metadata file: ' + metadata_savename)
+def metadataname():
+    metadata_savename = path_out + craft + '_' + dataset_start + '_' + dataset_end + '_info.txt'
+    return metadata_savename
 
-f = open(metadata_savename, "w")
+def calibratedname():
+    return str(craft) + '_' + str(dataset_start) + '_' + str(dataset_end) + str('_calibrated.txt')
 
-# CC modifications follow
-# paths not needed as they are in my environment
-# f.write('export PATH=$PATH:/cluster/operations/software/dp/bin/:/cluster/operations/software/caa \n')
-# FGMPATH also in my environment, and points to /cluster/operations/calibration/default - TUBS mirror is not used / not correct
-# f.write('export FGMPATH=$PATH:/cluster/operations/calibration/tubs_mirror/' + str(date_data[:4]) + '/' + str(date_data[4:6]) + ' \n')
-# f.write('export FGMPATH=/home/lme19/calibration \n')
-# f.write('export SATTPATH=. \n')
-# f.write('export ORBITPATH=. \n')
-f.write('putsatt /cluster/data/raw/' + str(date_data[:4]) + '/' + str(date_data[4:6]) + '/' +str(craft) + '_' + str(date_data[2:]) + '_B.SATT \n')
-f.write('putsatt /cluster/data/raw/' + str(date_dump[:4]) + '/' + str(date_dump[4:6]) + '/' +str(craft) + '_' + str(date_dump[2:]) + '_B.SATT \n')
-# works mostly, but ideally, should be next calendar day?
-f.write('putstof /cluster/data/raw/' + str(date_data[:4]) + '/' + str(date_data[4:6]) + '/' +str(craft) + '_' + str(date_data[2:]) + '_B.STOF \n')
-f.write('putstof /cluster/data/raw/' + str(date_dump[:4]) + '/' + str(date_dump[4:6]) + '/' +str(craft) + '_' + str(date_dump[2:]) + '_B.STOF \n')
+def save_metadata():
+    print('Metadata file: ' + metadataname())
+    f = open(metadataname(), "w")
+    # CC modifications follow
+    # paths not needed as they are in my environment
+    # f.write('export PATH=$PATH:/cluster/operations/software/dp/bin/:/cluster/operations/software/caa \n')
+    # FGMPATH also in my environment, and points to /cluster/operations/calibration/default - TUBS mirror is not used / not correct
+    # f.write('export FGMPATH=$PATH:/cluster/operations/calibration/tubs_mirror/' + str(date_data[:4]) + '/' + str(date_data[4:6]) + ' \n')
+    # f.write('export FGMPATH=/home/lme19/calibration \n')
+    # f.write('export SATTPATH=. \n')
+    # f.write('export ORBITPATH=. \n')
+    f.write('putsatt /cluster/data/raw/' + str(date_data[:4]) + '/' + str(date_data[4:6]) + '/' +str(craft) + '_' + str(date_data[2:]) + '_B.SATT \n')
+    f.write('putsatt /cluster/data/raw/' + str(date_dump[:4]) + '/' + str(date_dump[4:6]) + '/' +str(craft) + '_' + str(date_dump[2:]) + '_B.SATT \n')
+    # works mostly, but ideally, should be next calendar day?
+    f.write('putstof /cluster/data/raw/' + str(date_data[:4]) + '/' + str(date_data[4:6]) + '/' +str(craft) + '_' + str(date_data[2:]) + '_B.STOF \n')
+    f.write('putstof /cluster/data/raw/' + str(date_dump[:4]) + '/' + str(date_dump[4:6]) + '/' +str(craft) + '_' + str(date_dump[2:]) + '_B.STOF \n')
+    # f.write('./ext2tvec -i ' + str(craft) + '_EXT_Calibrated/' + str(craft) +  '_' + str(dataset_start) + '_' + str(dataset_end) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM_' + str(craft) + '_' + dataset_start + '_' + dataset_end + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V10.txt TIME_SPAN ' + str(dataset_start_iso) + '/' + str(dataset_end_iso) + ' version 01')
+    # CC edited:
+    f.write('ext2tvec -i ' + calibratedname() + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V11.txt TIME_SPAN ' + str(dataset_start_iso) + '/' + str(dataset_end_iso) + ' version 01')
+    f.close()
+    return
+save_metadata()
+#%%
+# print a string to scp the files to alsvid
+def scp2alsvid():
+    scp_script = 'scp ' + path_out + calibratedname()[:-15] + '*' + ' alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext' + '\n'
+    # scp_script += 'scp ' + metadataname() + ' alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext/' + '\n'
+    print(scp_script)
+    return
 
-# f.write('./ext2tvec -i ' + str(craft) + '_EXT_Calibrated/' + str(craft) +  '_' + str(dataset_start) + '_' + str(dataset_end) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM_' + str(craft) + '_' + dataset_start + '_' + dataset_end + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V10.txt TIME_SPAN ' + str(dataset_start_iso) + '/' + str(dataset_end_iso) + ' version 01')
-# CC edited:
-f.write('ext2tvec -i ' + str(craft) + '_' + str(dataset_start) + '_' + str(dataset_end) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V11.txt TIME_SPAN ' + str(dataset_start_iso) + '/' + str(dataset_end_iso) + ' version 01')
-
-f.close()
+scp2alsvid()
 
 #%%
 # print a string to scp the file from alsvid to local folder
