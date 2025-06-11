@@ -696,6 +696,10 @@ scp2alsvid()
 
 #%%
 # save the metadata file
+# a function to return the CEF filename
+def cefname(version='01'):
+    cefname = str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V' + version + '.cef'
+    return cefname
 
 metadata_savename =  path_out + craft + '_' + dataset_start + '_' + dataset_end + '_info.txt'
 print('Metadata file: ' + metadata_savename)
@@ -725,8 +729,7 @@ f.close()
 #%%
 # print a string to scp the file from alsvid to local folder
 def scp2local():
-    cefname = str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V01.cef'
-    scp_script = 'scp alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext/' + cefname + ' ' + path_out 
+    scp_script = 'scp alsvid.sp.ph.ic.ac.uk:/home/cmcarr/ext/' + cefname() + ' ' + path_out 
     print(scp_script)
     return
 
@@ -734,8 +737,7 @@ scp2local()
 # %%
 # plot the CEF file
 def checkplot():
-    cefname = str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V01.cef'
-    dataset = fgmopen(path_out,cefname)
+    dataset = fgmopen(path_out,cefname())
     fgmplot(dataset)
     return
 
@@ -743,8 +745,7 @@ checkplot()
 # %%
 # optional - plot with other datasets for final validation
 def valplot():
-    cefname = str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V01.cef'
-    dataset = fgmopen(path_out,cefname)
+    dataset = fgmopen(path_out,cefname())
     spin = fgmopen(path_out, 'C1_CP_FGM_SPIN__20010324_195500_20010325_200500_V00.cef')
     fgmplot([dataset,spin])
     return
