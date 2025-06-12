@@ -23,6 +23,8 @@ global t, x, y, z, r
 def setup(filename):
     with open (filename,'r') as f:
         for line in f:
+            if line[0] == '#':
+                continue
             cols = line.split('=')
             varname = cols[0].strip()
             varvalue = cols[1].strip()
@@ -411,47 +413,6 @@ def find_times():
 
 date_time_entry, date_time_exit, date_dump, date_data, t_spin = find_times()
 
-#%%
-# Find calibration file
-cal_filename = find_cal_file(craft, date_time_entry, path_cal)
-print('Calibration File \n',cal_filename)
-# extract cal
-def extract_cal():
-    cal_params = pd.read_csv(cal_filename, header = None, sep = ',|:', names = ['param', 'x', 'y', 'z'], on_bad_lines = 'skip', engine = 'python') 
-
-    x_offsets = cal_params[cal_params['param'].str.strip() == 'Offsets (nT)']['x'].astype(float).values.tolist()
-    x_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['x'].astype(float).values.tolist()
-    y_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['y'].astype(float).values.tolist()
-    z_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['z'].astype(float).values.tolist()
-
-    while len(x_offsets) < 6:
-        x_offsets.append(0.0)
-    while len(x_gains) < 6:
-        x_gains.append(1.0)
-    while len(y_gains) < 6:
-        y_gains.append(1.0)
-    while len(z_gains) < 6:
-        z_gains.append(1.0)
-
-    yz_gains = []
-    for i in np.arange(0,6):
-        yz_gain = (float(y_gains[i]) + float(z_gains[i])) / 2.0
-        yz_gains.append(yz_gain)
-
-    cal_params = {'x_offsets':  x_offsets,\
-                'x_gains':    x_gains,\
-                'yz_gains':   yz_gains}
-
-    return cal_params
-
-cal_params = extract_cal()
-
-def print_cal():
-    print('x offsets \t',cal_params['x_offsets'])
-    print('x gains \t',cal_params['x_gains'])
-    print('yz gains \t',cal_params['yz_gains'])
-    return
-print_cal()
 #%%        
 # Find BS file, process and extract
 BS_filename = find_BS_file(date_dump[2:], craft, path_bs)
@@ -524,15 +485,15 @@ def process_bs_file():
     bef_indices = sequential_data.loc[sequential_data['x'] == 'bef'].index.tolist()
     af_indices = sequential_data.loc[sequential_data['z'] == 'af'].index.tolist()
 
-    plt.figure(figsize=(8, 2))
+    plt.figure(figsize=(8, 1))
     plt.plot(ext_nums, ext_resets, label = 'all', markersize = 10, marker = '.')
     plt.plot(valid_nums, valid_ext_resets, label = 'valid', markersize = 5, marker = '.')
     plt.title('Packet Resets'); plt.legend()
-    plt.figure(figsize=(8, 2))
+    plt.figure(figsize=(8, 1))
     plt.plot(scets, ext_nums,  label = 'all', markersize = 10, marker = '.')
     plt.plot(valid_scets, valid_nums,  label = 'valid', markersize = 5, marker = '.')
     plt.title('Packet SCETs'); plt.legend()
-    plt.figure(figsize=(8, 2))
+    plt.figure(figsize=(8, 1))
     plt.plot(bef_indices, label = 'bef', marker = 'x')
     plt.plot(af_indices, label = 'af',marker='+')
     plt.title('AF and BEF indices (missing ends, missing starts)'); plt.legend()
@@ -612,11 +573,68 @@ def process_bs_file():
 
 t,x,y,z,r = process_bs_file()
 
+# timespan of the data
+def dataset_timespan():
+    # note that the start of the interval needs to be  rounded DOWN to the nearest second
+    # and the end of interval needs to be rounded UP 
+    start = t[0].strftime('%Y%m%d_%H%M%S')
+    start_iso = t[0].strftime('%Y-%m-%dT%H:%M:%SZ') 
+    temp_t = t[-1].replace(microsecond=0) + timedelta(seconds=1) 
+    end = temp_t.strftime('%Y%m%d_%H%M%S')
+    end_iso = temp_t.strftime('%Y-%m-%dT%H:%M:%SZ')
+    print('Dataset first vector time:\t', t[0].isoformat())
+    print('Dataset last vector time:\t', t[-1].isoformat())
+    print('Dataset Duration:\t\t',t[-1] - t[0])
+    return start, start_iso, end, end_iso
+dataset_start, dataset_start_iso, dataset_end, dataset_end_iso = dataset_timespan() 
+
+
 #%%
 # plot the raw timestamped data
 quickplot(craft + '_' + date_data + ' Raw Timestamped','time [UTC]','count [#]')
-
 #%%
+# Calibration
+# Find calibration file
+cal_filename = find_cal_file(craft, date_time_entry, path_cal)
+print('Calibration File \n',cal_filename)
+# extract cal
+def extract_cal():
+    cal_params = pd.read_csv(cal_filename, header = None, sep = ',|:', names = ['param', 'x', 'y', 'z'], on_bad_lines = 'skip', engine = 'python') 
+
+    x_offsets = cal_params[cal_params['param'].str.strip() == 'Offsets (nT)']['x'].astype(float).values.tolist()
+    x_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['x'].astype(float).values.tolist()
+    y_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['y'].astype(float).values.tolist()
+    z_gains = cal_params[cal_params['param'].str.strip() == 'Gains']['z'].astype(float).values.tolist()
+
+    while len(x_offsets) < 6:
+        x_offsets.append(0.0)
+    while len(x_gains) < 6:
+        x_gains.append(1.0)
+    while len(y_gains) < 6:
+        y_gains.append(1.0)
+    while len(z_gains) < 6:
+        z_gains.append(1.0)
+
+    yz_gains = []
+    for i in np.arange(0,6):
+        yz_gain = (float(y_gains[i]) + float(z_gains[i])) / 2.0
+        yz_gains.append(yz_gain)
+
+    cal_params = {'x_offsets':  x_offsets,\
+                'x_gains':    x_gains,\
+                'yz_gains':   yz_gains}
+
+    return cal_params
+
+cal_params = extract_cal()
+
+def print_cal():
+    print('x offsets \t',cal_params['x_offsets'])
+    print('x gains \t',cal_params['x_gains'])
+    print('yz gains \t',cal_params['yz_gains'])
+    return
+print_cal()
+
 # scaling and calibration
 # nominal change from engineering units to nanotesla
 # using +/-64nT with 15 bits in range 2
@@ -639,20 +657,6 @@ x,y,z = apply_cal()
 
 quickplot(craft + '_' + date_data + ' Calibrated','time [UTC]','[nT]')
 
-# timespan of the data
-def dataset_timespan():
-    # note that the start of the interval needs to be  rounded DOWN to the nearest second
-    # and the end of interval needs to be rounded UP 
-    start = t[0].strftime('%Y%m%d_%H%M%S')
-    start_iso = t[0].strftime('%Y-%m-%dT%H:%M:%SZ') 
-    temp_t = t[-1].replace(microsecond=0) + timedelta(seconds=1) 
-    end = temp_t.strftime('%Y%m%d_%H%M%S')
-    end_iso = temp_t.strftime('%Y-%m-%dT%H:%M:%SZ')
-    print('Dataset first vector time:\t', t[0].isoformat())
-    print('Dataset last vector time:\t', t[-1].isoformat())
-    print('Dataset Duration:\t\t',t[-1] - t[0])
-    return start, start_iso, end, end_iso
-dataset_start, dataset_start_iso, dataset_end, dataset_end_iso = dataset_timespan() 
 
 # save the calibrated data to a file
 def save_data():

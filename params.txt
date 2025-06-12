@@ -1,4 +1,6 @@
-craft = C1
+# params.txt
+# specifiy the parameters for the processing and file paths
+craft = C4
 date_entry =  20010324
 path_lib = ./Lib/
 path_cal = /Volumes/cluster/calibration/
