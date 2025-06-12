@@ -708,6 +708,12 @@ def metadataname():
 def calibratedname():
     return str(craft) + '_' + str(dataset_start) + '_' + str(dataset_end) + str('_calibrated.txt')
 
+def next_day(datestring):
+    # returns the next day as a string in the format YYYYMMDD
+    date = datetime.strptime(datestring, '%Y%m%d')
+    next_date = date + timedelta(days=1)
+    return next_date.strftime('%Y%m%d')
+
 def save_metadata():
     print('Metadata file: ' + metadataname())
     f = open(metadataname(), "w")
@@ -719,11 +725,15 @@ def save_metadata():
     # f.write('export FGMPATH=/home/lme19/calibration \n')
     # f.write('export SATTPATH=. \n')
     # f.write('export ORBITPATH=. \n')
+    day_after_data = next_day(date_data)
     f.write('putsatt /cluster/data/raw/' + str(date_data[:4]) + '/' + str(date_data[4:6]) + '/' +str(craft) + '_' + str(date_data[2:]) + '_B.SATT \n')
-    f.write('putsatt /cluster/data/raw/' + str(date_dump[:4]) + '/' + str(date_dump[4:6]) + '/' +str(craft) + '_' + str(date_dump[2:]) + '_B.SATT \n')
+    f.write('putsatt /cluster/data/raw/' + str(day_after_data[:4]) + '/' + str(day_after_data[4:6]) + '/' +str(craft) + '_' + str(day_after_data[2:]) + '_B.SATT \n')
+    
+    # f.write('putsatt /cluster/data/raw/' + str(date_dump[:4]) + '/' + str(date_dump[4:6]) + '/' +str(craft) + '_' + str(date_dump[2:]) + '_B.SATT \n')
     # works mostly, but ideally, should be next calendar day?
     f.write('putstof /cluster/data/raw/' + str(date_data[:4]) + '/' + str(date_data[4:6]) + '/' +str(craft) + '_' + str(date_data[2:]) + '_B.STOF \n')
-    f.write('putstof /cluster/data/raw/' + str(date_dump[:4]) + '/' + str(date_dump[4:6]) + '/' +str(craft) + '_' + str(date_dump[2:]) + '_B.STOF \n')
+    f.write('putstof /cluster/data/raw/' + str(day_after_data[:4]) + '/' + str(day_after_data[4:6]) + '/' +str(craft) + '_' + str(day_after_data[2:]) + '_B.STOF \n')
+    # f.write('putstof /cluster/data/raw/' + str(date_dump[:4]) + '/' + str(date_dump[4:6]) + '/' +str(craft) + '_' + str(date_dump[2:]) + '_B.STOF \n')
     # f.write('./ext2tvec -i ' + str(craft) + '_EXT_Calibrated/' + str(craft) +  '_' + str(dataset_start) + '_' + str(dataset_end) + str('_calibrated.txt') + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM_' + str(craft) + '_' + dataset_start + '_' + dataset_end + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V10.txt TIME_SPAN ' + str(dataset_start_iso) + '/' + str(dataset_end_iso) + ' version 01')
     # CC edited:
     f.write('ext2tvec -i ' + calibratedname() + ' | fgmhrt -s gse | fgmpos | caavec -t 3 -m 3 -O ' + str(craft) + '_CP_FGM_EXTM__' + dataset_start + '_' + dataset_end + '_V01.cef -H /cluster/operations/calibration/caa_header_files/header_form_V11.txt TIME_SPAN ' + str(dataset_start_iso) + '/' + str(dataset_end_iso) + ' version 01')
