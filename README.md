@@ -31,6 +31,3 @@ Update 'Craft' and 'Index' variables at lines 28 and 30 respectively to pick a s
  
 
 Run file – deposits calibrated data and metadata files into corresponding spacecraft output folder. 
-
- 
-[20010324]
