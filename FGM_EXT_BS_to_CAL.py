@@ -48,11 +48,12 @@ def setup(filename):
                 else:
                     path_bs = varvalue
             elif varname == 'path_out':
-                varvalue += date_entry + '/'
                 if not os.path.isdir(varvalue):
                     raise Exception('No directory {}'.format(varvalue))
                 else:
-                    path_out = varvalue
+                    path_out = varvalue + date_entry + '/'
+                    if not os.path.isdir(path_out):
+                        os.mkdir(path_out)
             else:
                 raise Exception('Invalid line {} in file {}'.format(line,filename))
     return craft, date_entry, path_lib, path_cal, path_bs, path_out
