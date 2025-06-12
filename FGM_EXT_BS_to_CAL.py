@@ -17,6 +17,8 @@ import pandas as pd
 import os, fnmatch
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
+plt.rcParams['figure.dpi'] = 96
+plt.rcParams['figure.figsize'] = (8, 8)
 # Defining constant variables, lists etc...
 global t, x, y, z, r
 # setup processing parameters and filepaths from separate text file
@@ -199,7 +201,7 @@ def packet_decoding_odd(ext_bytes):
     return df_p
 
 def quickplot(titletext,xlabeltext,ylabeltext):
-    plt.subplots(5,1,sharex=True,height_ratios=[2,2,2,2,1])
+    plt.subplots(5,1,figsize=(8,8),sharex=True,height_ratios=[2,2,2,2,1])
     plt.subplot(5,1,1);plt.plot(t,x,label='x');plt.grid();plt.legend();plt.ylabel(ylabeltext)
     plt.subplot(5,1,2);plt.plot(t,y,label='y');plt.grid();plt.legend();plt.ylabel(ylabeltext)
     plt.subplot(5,1,3);plt.plot(t,z,label='z');plt.grid();plt.legend();plt.ylabel(ylabeltext)
@@ -486,6 +488,7 @@ def process_bs_file():
     bef_indices = sequential_data.loc[sequential_data['x'] == 'bef'].index.tolist()
     af_indices = sequential_data.loc[sequential_data['z'] == 'af'].index.tolist()
 
+    # %matplotlib inline
     plt.figure(figsize=(8, 1))
     plt.plot(ext_nums, ext_resets, label = 'all', markersize = 10, marker = '.')
     plt.plot(valid_nums, valid_ext_resets, label = 'valid', markersize = 5, marker = '.')
@@ -592,6 +595,7 @@ dataset_start, dataset_start_iso, dataset_end, dataset_end_iso = dataset_timespa
 
 #%%
 # plot the raw timestamped data
+# %matplotlib ipympl
 quickplot(craft + '_' + date_data + ' Raw Timestamped','time [UTC]','count [#]')
 #%%
 # Calibration
@@ -753,12 +757,31 @@ def checkplot():
 
 extm = checkplot()
 # %%
-# optional - plot with other datasets for final validation
-def valplot():
+# optional - plot with SPIN datasets for final validation
+def find(pattern, path):
+    result = []
+    for root, dirs, files in os.walk(path):
+        for name in files:
+            if fnmatch.fnmatch(name, pattern):
+                result.append(os.path.join(root, name))
+    if len(result) == 0:
+        raise Exception('No file matching pattern {} found in {}'.format(pattern, path))
+    elif len(result) > 1:
+        print('Warning: More than one file matching pattern {} found in {}. Returning first match.'.format(pattern, path))
+    return result[0]
+
+def valplot(start=None,end=None):
     dataset = fgmopen(path_out,cefname())
-    spin = fgmopen(path_out, 'C1_CP_FGM_SPIN__20010324_195500_20010325_200500_V00.cef')
-    fgmplot([dataset,spin])
+    # spin = fgmopen(path_out, 'C1_CP_FGM_SPIN__20010324_195500_20010325_200500_V00.cef')
+    spin_name = find(craft+'_CP_FGM_SPIN*.cef', path_out)
+    spin = fgmopen('/', spin_name)
+    fgmplot([dataset,spin],start,end)
     return
 
 valplot()
+
+
+# %%
+# plot the EXT data with a 15 minute window around the entry time
+valplot(start=date_time_entry-timedelta(minutes=15),end=date_time_entry+timedelta(minutes=15))
 # %%
