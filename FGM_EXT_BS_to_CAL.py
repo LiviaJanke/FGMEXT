@@ -749,12 +749,11 @@ def scp2local():
 
 scp2local()
 # %%
-# plot the CEF file
+# plot the CEF file and return the dataset as a global variable
 def checkplot():
     dataset = fgmopen(path_out,cefname())
     fgmplot(dataset)
     return dataset
-
 extm = checkplot()
 # %%
 # optional - plot with SPIN datasets for final validation
@@ -769,19 +768,12 @@ def find(pattern, path):
     elif len(result) > 1:
         print('Warning: More than one file matching pattern {} found in {}. Returning first match.'.format(pattern, path))
     return result[0]
+# return SPIN dataset as a global variable
+spin = fgmopen('/', find(craft+'_CP_FGM_SPIN*.cef', path_out))
 
-def valplot(start=None,end=None):
-    dataset = fgmopen(path_out,cefname())
-    # spin = fgmopen(path_out, 'C1_CP_FGM_SPIN__20010324_195500_20010325_200500_V00.cef')
-    spin_name = find(craft+'_CP_FGM_SPIN*.cef', path_out)
-    spin = fgmopen('/', spin_name)
-    fgmplot([dataset,spin],start,end)
-    return
-
-valplot()
-
+fgmplot([extm,spin])
 
 # %%
 # plot the EXT data with a 15 minute window around the entry time
-valplot(start=date_time_entry-timedelta(minutes=15),end=date_time_entry+timedelta(minutes=15))
+fgmplot([extm,spin],date_time_entry-timedelta(minutes=15),date_time_entry+timedelta(minutes=15))
 # %%
