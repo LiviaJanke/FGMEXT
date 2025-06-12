@@ -749,9 +749,9 @@ scp2local()
 def checkplot():
     dataset = fgmopen(path_out,cefname())
     fgmplot(dataset)
-    return
+    return dataset
 
-checkplot()
+extm = checkplot()
 # %%
 # optional - plot with other datasets for final validation
 def valplot():
