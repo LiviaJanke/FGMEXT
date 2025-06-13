@@ -1,7 +1,5 @@
 # paths.txt
 # specify file paths
-# craft = C1
-# date_entry =  20010420
 path_lib = ./Lib/
 path_cal = /Volumes/cluster/calibration/
 path_bs  = /Volumes/cluster/bs/

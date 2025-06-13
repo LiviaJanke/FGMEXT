@@ -1,8 +1,8 @@
 #%%
 # setup and initial processing
 # specify date and spacecraft to process
-craft = 'C2'
-date_entry = '20010503'
+craft = 'C3'
+date_entry = '20010511'
 """
 Created on Sun Jul 28 11:35:50 2024
 @author: Livia
