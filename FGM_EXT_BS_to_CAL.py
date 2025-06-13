@@ -62,12 +62,12 @@ def setup(filename):
 
 craft, date_entry, path_lib, path_cal, path_bs, path_out = setup('params.txt')
                                
-print('Craft: ' + craft)
-print('Entry Date: ' + date_entry)
-print('Extm Library: ',path_lib)
-print('Calibration files: ',path_cal)
-print('Burst Science files: ',path_bs)
-print('Save location: ',path_out)
+print('Craft:\t\t' + craft)
+print('Entry Date:\t' + date_entry)
+print('Lib path:\t',path_lib)
+print('Cal path:\t',path_cal)
+print('BS path :\t',path_bs)
+print('Save path:\t',path_out)
 
 # defining functions
 #s16 changes unsigned 16 bit hex numbers to signed (positive and negative)
@@ -324,7 +324,6 @@ class packet():
         return("{:7s}".format("#"+str(self.pktcnt))+" | "+" ".join('{:02X}'.format(n) for n in self.cdds)+" | "+" ".join('{:02X}'.format(n) for n in self.payload[0:30]))
 
 
-#%%
 # Find EXT entry/exit/dump times
 # validphid=(0x1F,0x47,0x6F,0x97,0x26,0x4E,0x76,0x9E,0x2D,0x55,0x7D,0xA5) # not used? (CC)
 
@@ -398,9 +397,9 @@ def find_times():
 
     # expected_packet_num = duration/timedelta(minutes=20, seconds=23)
 
-    print('EXT Entry Time',date_time_entry)
-    print('EXT Exit Time',date_time_exit)
-    print('EXT Duration',duration)
+    print('EXT Entry Time\t',date_time_entry)
+    print('EXT Exit Time\t',date_time_exit)
+    print('EXT Duration\t',duration)
 
     date_dump = MSA_dump.strftime('%Y%m%d')
     date_data = date_time_entry.strftime('%Y%m%d')
@@ -410,16 +409,15 @@ def find_times():
     # formatted_entry = date_time_entry.strftime('%Y%m%d')=
     # formatted_exit = date_time_exit.strftime('%Y%m%d')
 
-    print('MSA Dump Time', MSA_dump)
+    print('MSA Dump Time\t', MSA_dump)
 
     return date_time_entry, date_time_exit, date_dump, date_data, t_spin
 
 date_time_entry, date_time_exit, date_dump, date_data, t_spin = find_times()
 
-#%%        
 # Find BS file, process and extract
 BS_filename = find_BS_file(date_dump[2:], craft, path_bs)
-print('Burst Science file \n',BS_filename)
+print('BS file:\t',BS_filename)
 # process BS file
 def process_bs_file():
     file = open(BS_filename,"rb")
@@ -586,9 +584,9 @@ def dataset_timespan():
     temp_t = t[-1].replace(microsecond=0) + timedelta(seconds=1) 
     end = temp_t.strftime('%Y%m%d_%H%M%S')
     end_iso = temp_t.strftime('%Y-%m-%dT%H:%M:%SZ')
-    print('Dataset first vector time:\t', t[0].isoformat())
-    print('Dataset last vector time:\t', t[-1].isoformat())
-    print('Dataset Duration:\t\t',t[-1] - t[0])
+    print('First vector:\t', t[0].isoformat())
+    print('Last vector:\t', t[-1].isoformat())
+    print('Duration:\t',t[-1] - t[0])
     return start, start_iso, end, end_iso
 dataset_start, dataset_start_iso, dataset_end, dataset_end_iso = dataset_timespan() 
 
@@ -601,7 +599,7 @@ quickplot(craft + '_' + date_data + ' Raw Timestamped','time [UTC]','count [#]')
 # Calibration
 # Find calibration file
 cal_filename = find_cal_file(craft, date_time_entry, path_cal)
-print('Calibration File \n',cal_filename)
+print('Cal file:\t',cal_filename)
 # extract cal
 def extract_cal():
     cal_params = pd.read_csv(cal_filename, header = None, sep = ',|:', names = ['param', 'x', 'y', 'z'], on_bad_lines = 'skip', engine = 'python') 
@@ -634,9 +632,9 @@ def extract_cal():
 cal_params = extract_cal()
 
 def print_cal():
-    print('x offsets \t',cal_params['x_offsets'])
-    print('x gains \t',cal_params['x_gains'])
-    print('yz gains \t',cal_params['yz_gains'])
+    print('x offsets:\t',cal_params['x_offsets'])
+    print('x gains:\t',cal_params['x_gains'])
+    print('yz gains:\t',cal_params['yz_gains'])
     return
 print_cal()
 
@@ -665,13 +663,13 @@ quickplot(craft + '_' + date_data + ' Calibrated','time [UTC]','[nT]')
 
 # save the calibrated data to a file
 def save_data():
-    print('Timebase Start:')
-    print(dataset_start)
-    print('Timebase Stop:')
-    print(dataset_end)
+    print('Timespan:\t {} / {}'.format(dataset_start, dataset_end))
+    # print(dataset_start)
+    # print('Timebase Stop:')
+    # print(dataset_end)
     savename = path_out + craft + '_' + dataset_start + '_' + dataset_end + '_calibrated.txt'
     fgmsave(savename,t,x,y,z,r)
-    print('Saved to: ' + savename)
+    print('Saved to:\t' + savename)
     return
 save_data()
     
@@ -691,7 +689,6 @@ def finalcheck():
     quickplot(filename + ' Final Check', 'time [UTC]', '[nT]')
     
     return
-
 finalcheck() 
 
 #%%
@@ -715,7 +712,7 @@ def next_day(datestring):
     return next_date.strftime('%Y%m%d')
 
 def save_metadata():
-    print('Metadata file: ' + metadataname())
+    print('Metadata file:\t' + metadataname())
     f = open(metadataname(), "w")
     # CC modifications follow
     # paths not needed as they are in my environment
