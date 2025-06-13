@@ -1,9 +1,10 @@
-#%% 
-# libraries, functions and setup
-# -*- coding: utf-8 -*-
+#%%
+# setup and initial processing
+# specify date and spacecraft to process
+craft = 'C2'
+date_entry = '20010503'
 """
 Created on Sun Jul 28 11:35:50 2024
-
 @author: Livia
 """
 import numpy as np
@@ -30,11 +31,7 @@ def setup(filename):
             cols = line.split('=')
             varname = cols[0].strip()
             varvalue = cols[1].strip()
-            if varname == 'craft':
-                craft = varvalue
-            elif varname == 'date_entry':
-                date_entry = varvalue
-            elif varname == 'path_lib':
+            if varname == 'path_lib':
                 if not os.path.isdir(varvalue):
                     raise Exception('No directory {}'.format(varvalue))
                 else:
@@ -58,10 +55,10 @@ def setup(filename):
                         os.mkdir(path_out)
             else:
                 raise Exception('Invalid line {} in file {}'.format(line,filename))
-    return craft, date_entry, path_lib, path_cal, path_bs, path_out
+    return path_lib, path_cal, path_bs, path_out
 
-craft, date_entry, path_lib, path_cal, path_bs, path_out = setup('params.txt')
-                               
+path_lib, path_cal, path_bs, path_out = setup('paths.txt')
+
 print('Craft:\t\t' + craft)
 print('Entry Date:\t' + date_entry)
 print('Lib path:\t',path_lib)
